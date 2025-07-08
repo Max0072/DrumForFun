@@ -1,0 +1,23 @@
+# docker-compose.dev.yml - для разработки с SQLite
+version: '3.8'
+
+services:
+  # Next.js приложение для разработки
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    volumes:
+      # Сохраняем базу данных SQLite с правильными правами
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - drum-network
+
+networks:
+  drum-network:
+    driver: bridge

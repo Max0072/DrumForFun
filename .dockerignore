@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Next.js
+.next
+out
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Database
+bookings.db*
+
+# Logs
+*.log
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# MacOS
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Scripts
+*.sh
+
+# Documentation
+*.md
+!README.md
