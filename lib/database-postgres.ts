@@ -126,7 +126,7 @@ class PostgreSQLDatabase {
         id
       ])
       console.log('✅ Booking status updated:', id, status)
-      return result.rowCount > 0
+      return (result.rowCount ?? 0) > 0
     } catch (error) {
       console.error('❌ Error updating booking:', error)
       throw error

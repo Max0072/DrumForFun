@@ -73,6 +73,8 @@ function BookingForm() {
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
   const initialRenderRef = useRef(true)
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(allTimeSlots)
+  const [timeSlotConflicts, setTimeSlotConflicts] = useState<string[]>([])
+  const [bookingWarning, setBookingWarning] = useState('')
 
   // Состояние формы
   const [formData, setFormData] = useState<BookingFormData>({
@@ -135,6 +137,49 @@ function BookingForm() {
       fetchAvailableTimeSlots(date, bookingType)
     }
   }, [date, bookingType])
+
+  // Check for conflicts when time or duration changes
+  useEffect(() => {
+    if (date && formData.time && formData.duration) {
+      checkTimeSlotConflicts(date, formData.time, formData.duration, bookingType)
+    }
+  }, [date, formData.time, formData.duration, bookingType])
+
+  // Function to check for conflicts when selecting duration > 1
+  const checkTimeSlotConflicts = async (selectedDate: Date, startTime: string, duration: string, type: string) => {
+    if (!selectedDate || !startTime || parseInt(duration) <= 1) {
+      setTimeSlotConflicts([])
+      setBookingWarning('')
+      return
+    }
+
+    try {
+      const cyprusDate = new Date(selectedDate.toLocaleString("en-US", { timeZone: "Europe/Nicosia" }))
+      const year = cyprusDate.getFullYear()
+      const month = String(cyprusDate.getMonth() + 1).padStart(2, '0')
+      const day = String(cyprusDate.getDate()).padStart(2, '0')
+      const dateString = `${year}-${month}-${day}`
+      
+      const response = await fetch(`/api/availability?date=${dateString}&type=${type}&startTime=${startTime}&duration=${duration}`)
+      const result = await response.json()
+
+      if (response.ok && result.conflicts) {
+        setTimeSlotConflicts(result.conflicts)
+        if (result.conflicts.length > 0) {
+          setBookingWarning(`Warning: Your ${duration}-hour booking starting at ${startTime} conflicts with existing reservations at: ${result.conflicts.join(', ')}`)
+        } else {
+          setBookingWarning(`✓ No conflicts detected for ${duration}-hour booking starting at ${startTime}`)
+        }
+      } else {
+        setTimeSlotConflicts([])
+        setBookingWarning('')
+      }
+    } catch (error) {
+      console.error('Error checking conflicts:', error)
+      setTimeSlotConflicts([])
+      setBookingWarning('')
+    }
+  }
 
   const fetchAvailableTimeSlots = async (selectedDate: Date, type: string) => {
     try {
@@ -240,6 +285,12 @@ function BookingForm() {
   // Обработчик изменения полей формы
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Clear warnings when user changes time or duration
+    if (name === 'time' || name === 'duration') {
+      setBookingWarning('')
+      setTimeSlotConflicts([])
+    }
 
     // Если уже была попытка отправки, валидируем поле при изменении
     if (attemptedSubmit) {
@@ -616,9 +667,33 @@ function BookingForm() {
                     <SelectItem value="2">2 hours</SelectItem>
                     <SelectItem value="3">3 hours</SelectItem>
                     <SelectItem value="4">4 hours</SelectItem>
-                    <SelectItem value="custom">Custom duration</SelectItem>
+                    <SelectItem value="5">5 hours</SelectItem>
+                    <SelectItem value="6">6 hours</SelectItem>
+                    <SelectItem value="7">7 hours</SelectItem>
+                    <SelectItem value="8">8 hours</SelectItem>
                   </SelectContent>
                 </Select>
+                {bookingWarning && (
+                  <div className={cn(
+                    "p-3 rounded-lg border text-sm",
+                    timeSlotConflicts.length > 0 
+                      ? "bg-yellow-50 border-yellow-200 text-yellow-800" 
+                      : "bg-green-50 border-green-200 text-green-800"
+                  )}>
+                    {timeSlotConflicts.length > 0 && (
+                      <span className="font-medium">⚠️ </span>
+                    )}
+                    {timeSlotConflicts.length === 0 && parseInt(formData.duration) > 1 && (
+                      <span className="font-medium">✓ </span>
+                    )}
+                    {bookingWarning}
+                    {timeSlotConflicts.length > 0 && (
+                      <div className="mt-2 text-xs">
+                        Note: Your booking may still be possible if rooms become available or if you choose a different time.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </form>
           </CardContent>

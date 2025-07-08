@@ -25,7 +25,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
           router.push('/admin/login')
         }
       } catch (error) {
-        console.error('Ошибка проверки авторизации:', error)
+        console.error('Authorization check error:', error)
         setIsAuthenticated(false)
         router.push('/admin/login')
       }
@@ -39,14 +39,14 @@ export default function AdminGuard({ children }: AdminGuardProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Проверка авторизации...</p>
+          <p className="text-gray-600">Checking authorization...</p>
         </div>
       </div>
     )
   }
 
   if (isAuthenticated === false) {
-    return null // Редирект на страницу входа
+    return null // Redirect to login page
   }
 
   return <>{children}</>

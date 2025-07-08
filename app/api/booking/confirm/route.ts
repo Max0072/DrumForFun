@@ -39,18 +39,30 @@ export async function POST(req: NextRequest) {
         }
 
         // Обновляем статус в базе данных
-        await database.updateBookingStatus(bookingId, status, adminMessage, roomId, roomName)
+        await database.updateBookingStatus(
+            bookingId, 
+            status, 
+            adminMessage || undefined, 
+            roomId || undefined, 
+            roomName || undefined
+        )
 
         // Отправляем email клиенту с результатом
         if (status === 'confirmed') {
-            const template = emailTemplates.bookingConfirmed(bookingId, adminMessage)
+            const bookingDateTime = `${booking.date} ${booking.time}`
+            const template = emailTemplates.bookingConfirmed(
+                bookingId, 
+                bookingDateTime, 
+                roomName || 'Not assigned', 
+                adminMessage || undefined
+            )
             await sendEmail({
                 to: booking.email,
                 subject: template.subject,
                 html: template.html
             })
         } else if (status === 'rejected') {
-            const template = emailTemplates.bookingRejected(bookingId, adminMessage)
+            const template = emailTemplates.bookingRejected(bookingId, adminMessage || undefined)
             await sendEmail({
                 to: booking.email,
                 subject: template.subject,

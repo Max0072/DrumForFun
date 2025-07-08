@@ -104,9 +104,9 @@ export async function POST(
     const updated = await database.updateBookingStatus(
       bookingId,
       newStatus,
-      adminMessage,
-      roomId,
-      roomName
+      adminMessage || undefined,
+      roomId || undefined,
+      roomName || undefined
     )
 
     if (!updated) {
@@ -128,7 +128,7 @@ export async function POST(
       // Не прерываем выполнение, если email не отправился
     }
 
-    const actionText = {
+    const actionText: Record<string, string> = {
       confirm: 'подтверждена',
       reject: 'отклонена', 
       cancel: 'отменена'
@@ -136,7 +136,7 @@ export async function POST(
 
     return NextResponse.json({ 
       success: true,
-      message: `Заявка ${actionText[action]}`
+      message: `Заявка ${actionText[action as keyof typeof actionText]}`
     })
   } catch (error) {
     console.error('Ошибка при обработке действия:', error)

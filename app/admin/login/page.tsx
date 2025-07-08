@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { Lock } from "lucide-react"
+import { ThemeProvider } from "@/components/admin/ThemeProvider"
 
-export default function AdminLogin() {
+function AdminLoginContent() {
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -33,21 +34,21 @@ export default function AdminLogin() {
 
       if (response.ok) {
         toast({
-          title: "Успешный вход",
-          description: "Добро пожаловать в админ-панель",
+          title: 'Login successful',
+          description: 'Welcome to admin panel',
         })
         router.push('/admin')
       } else {
         toast({
-          title: "Ошибка входа",
-          description: result.error || "Неверные учетные данные",
+          title: 'Login error',
+          description: result.error || 'Invalid credentials',
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Ошибка",
-        description: "Произошла ошибка при входе",
+        title: 'Error',
+        description: 'An error occurred during login',
         variant: "destructive",
       })
     } finally {
@@ -56,21 +57,21 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto h-12 w-12 bg-yellow-500 rounded-full flex items-center justify-center mb-4">
             <Lock className="h-6 w-6 text-black" />
           </div>
-          <CardTitle className="text-2xl font-bold">Админ-панель</CardTitle>
+          <CardTitle className="text-2xl font-bold">Admin Panel</CardTitle>
           <CardDescription>
-            Введите учетные данные для доступа к панели управления
+            Enter your credentials to access the control panel
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login">Логин</Label>
+              <Label htmlFor="login">Login</Label>
               <Input
                 id="login"
                 type="text"
@@ -78,11 +79,11 @@ export default function AdminLogin() {
                 onChange={(e) => setLogin(e.target.value)}
                 required
                 disabled={isLoading}
-                placeholder="Введите логин"
+                placeholder="Enter login"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Пароль</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -90,7 +91,7 @@ export default function AdminLogin() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                placeholder="Введите пароль"
+                placeholder="Enter password"
               />
             </div>
             <Button
@@ -98,11 +99,19 @@ export default function AdminLogin() {
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
               disabled={isLoading}
             >
-              {isLoading ? "Вход..." : "Войти"}
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
           </form>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminLogin() {
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <AdminLoginContent />
+    </ThemeProvider>
   )
 }

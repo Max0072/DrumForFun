@@ -29,7 +29,7 @@ export default function Home() {
               <Link href="/booking">Book a Session</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="dark:text-white text-black hover:bg-white/10">
-              <Link href="/lessons">Explore Lessons</Link>
+              <Link href="/booking?type=party">Book a party</Link>
             </Button>
           </div>
         </div>
@@ -49,29 +49,15 @@ export default function Home() {
               linkText="Book Now"
             />
 
-            <ServiceCard
-              icon={<Music className="h-10 w-10 text-yellow-500" />}
-              title="Music Lessons"
-              description="Learn drums or guitar with our experienced instructors"
-              link="/lessons"
-              linkText="View Lessons"
-            />
 
             <ServiceCard
-              icon={<Gift className="h-10 w-10 text-yellow-500" />}
-              title="Birthday Parties"
-              description="Celebrate your special day with music and fun activities"
-              link="/booking?type=party"
-              linkText="Plan Your Party"
+                icon={<Gift className="h-10 w-10 text-yellow-500" />}
+                title="Birthday Parties"
+                description="Celebrate your special day with music and fun activities"
+                link="/booking?type=party"
+                linkText="Plan Your Party"
             />
 
-            <ServiceCard
-              icon={<ShoppingBag className="h-10 w-10 text-yellow-500" />}
-              title="Music Store"
-              description="Shop quality instruments, accessories, and merchandise"
-              link="/store"
-              linkText="Shop Now"
-            />
 
             <ServiceCard
               icon={<Headphones className="h-10 w-10 text-yellow-500" />}
@@ -81,13 +67,32 @@ export default function Home() {
               linkText="View Equipment"
             />
 
-            <ServiceCard
-              icon={<Drum className="h-10 w-10 text-yellow-500" />}
-              title="Drum Shows"
-              description="Book our talented drummers for your next event"
-              link="/drum-show"
-              linkText="Book a Show"
-            />
+
+            {/*<ServiceCard*/}
+            {/*  icon={<Music className="h-10 w-10 text-yellow-500" />}*/}
+            {/*  title="Music Lessons"*/}
+            {/*  description="Learn drums or guitar with our experienced instructors"*/}
+            {/*  link="/lessons"*/}
+            {/*  linkText="View Lessons"*/}
+            {/*/>*/}
+
+
+            {/*<ServiceCard*/}
+            {/*  icon={<ShoppingBag className="h-10 w-10 text-yellow-500" />}*/}
+            {/*  title="Music Store"*/}
+            {/*  description="Shop quality instruments, accessories, and merchandise"*/}
+            {/*  link="/store"*/}
+            {/*  linkText="Shop Now"*/}
+            {/*/>*/}
+
+
+            {/*<ServiceCard*/}
+            {/*  icon={<Drum className="h-10 w-10 text-yellow-500" />}*/}
+            {/*  title="Drum Shows"*/}
+            {/*  description="Book our talented drummers for your next event"*/}
+            {/*  link="/drum-show"*/}
+            {/*  linkText="Book a Show"*/}
+            {/*/>*/}
           </div>
         </div>
       </section>

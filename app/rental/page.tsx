@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,96 +11,81 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ShoppingCart, CalendarIcon, X, Copy } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ShoppingCart, CalendarIcon, X, Copy, Search, Package } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/components/cart-provider"
 
-// Mock rental equipment data
-const rentalEquipment = [
-  {
-    id: "drum-kit-rental",
-    name: "Professional Drum Kit",
-    price: 75,
-    category: "drums",
-    image: "https://images.pexels.com/photos/995301/pexels-photo-995301.jpeg?auto=compress&cs=tinysrgb&w=300",
-    description: "Complete 7-piece drum kit with hardware and cymbals.",
-  },
-  {
-    id: "electronic-kit-rental",
-    name: "Electronic Drum Kit",
-    price: 60,
-    category: "drums",
-    image: "https://images.unsplash.com/photo-1445985543470-41fba5c3144a?auto=compress&cs=tinysrgb&w=300",
-    description: "Professional electronic drum kit with headphones.",
-  },
-  {
-    id: "acoustic-guitar-rental",
-    name: "Acoustic Guitar",
-    price: 25,
-    category: "guitars",
-    image: "https://images.unsplash.com/photo-1445985543470-41fba5c3144a?auto=compress&cs=tinysrgb&w=300",
-    description: "Full-size acoustic guitar with case.",
-  },
-  {
-    id: "electric-guitar-rental",
-    name: "Electric Guitar",
-    price: 35,
-    category: "guitars",
-    image: "https://images.pexels.com/photos/5089118/pexels-photo-5089118.jpeg?auto=compress&cs=tinysrgb&w=300",
-    description: "Electric guitar with amplifier and accessories.",
-  },
-  {
-    id: "bass-guitar-rental",
-    name: "Bass Guitar",
-    price: 30,
-    category: "guitars",
-    image: "https://images.pexels.com/photos/5089152/pexels-photo-5089152.jpeg?auto=compress&cs=tinysrgb&w=300",
-    description: "4-string bass guitar with amplifier.",
-  },
-  {
-    id: "pa-system-rental",
-    name: "PA System",
-    price: 100,
-    category: "sound",
-    image: "https://images.pexels.com/photos/8412414/pexels-photo-8412414.jpeg?auto=compress&cs=tinysrgb&w=300",
-    description: "Complete PA system with speakers, mixer, and microphones.",
-  },
-  {
-    id: "keyboard-rental",
-    name: "Professional Keyboard",
-    price: 45,
-    category: "keyboards",
-    image: "https://images.pexels.com/photos/7095517/pexels-photo-7095517.jpeg?auto=compress&cs=tinysrgb&w=300",
-    description: "88-key weighted keyboard with stand.",
-  },
-  {
-    id: "dj-equipment-rental",
-    name: "DJ Equipment",
-    price: 120,
-    category: "sound",
-    image: "https://images.unsplash.com/photo-1445985543470-41fba5c3144a?auto=compress&cs=tinysrgb&w=300",
-    description: "Complete DJ setup with controller, speakers, and lights.",
-  },
-]
+interface RentalItem {
+  id: string
+  name: string
+  description: string
+  pricePerDay: number
+  category: string
+  inStock: number
+  imageUrl?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt?: string
+}
 
 type SelectedEquipment = {
-  equipment: (typeof rentalEquipment)[0]
+  equipment: RentalItem
   dates: Date[]
 }
 
 export default function RentalPage() {
+  const [rentalItems, setRentalItems] = useState<RentalItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState("all")
   const [selectedEquipment, setSelectedEquipment] = useState<SelectedEquipment[]>([])
   const [selectedDates, setSelectedDates] = useState<Date[]>([])
   const { addItem } = useCart()
   const { toast } = useToast()
 
-  const filteredEquipment = rentalEquipment.filter((item) => {
-    return activeCategory === "all" || item.category === activeCategory
+  useEffect(() => {
+    fetchRentalItems()
+  }, [])
+
+  const fetchRentalItems = async () => {
+    try {
+      const response = await fetch('/api/rental-items')
+      const result = await response.json()
+      
+      if (result.success) {
+        setRentalItems(result.items)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load rental items",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error loading rental items:', error)
+      toast({
+        title: "Error",
+        description: "An error occurred while loading rental items",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredEquipment = rentalItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         item.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = activeCategory === "all" || item.category === activeCategory
+    return matchesSearch && matchesCategory
   })
 
-  const handleEquipmentToggle = (equipment: (typeof rentalEquipment)[0], checked: boolean) => {
+  // Получаем уникальные категории из товаров
+  const categories = [...new Set(rentalItems.map(item => item.category))].filter(Boolean)
+
+  const handleEquipmentToggle = (equipment: RentalItem, checked: boolean) => {
     if (checked) {
       setSelectedEquipment((prev) => [...prev, { equipment, dates: [...selectedDates] }])
     } else {
@@ -133,7 +118,7 @@ export default function RentalPage() {
     if (selectedEquipment.length === 0) {
       toast({
         title: "No equipment selected",
-        description: "Please select at least one piece of equipment.",
+        description: "Please select at least one item for rental.",
         variant: "destructive",
       })
       return
@@ -148,7 +133,7 @@ export default function RentalPage() {
 
     if (hasEmptyDates) {
       toast({
-        title: "Missing dates",
+        title: "No dates selected",
         description: "Please select dates for all equipment.",
         variant: "destructive",
       })
@@ -158,21 +143,21 @@ export default function RentalPage() {
     // Добавляем каждый товар в корзину
     selectedEquipment.forEach((item) => {
       const totalDays = item.dates.length
-      const totalPrice = item.equipment.price * totalDays
+      const totalPrice = item.equipment.pricePerDay * totalDays
 
       addItem({
         id: `${item.equipment.id}-${item.dates.map((d) => d.toISOString()).join("-")}`,
-        name: `${item.equipment.name} (${totalDays} day${totalDays > 1 ? "s" : ""})`,
+        name: `${item.equipment.name} (${totalDays} ${totalDays === 1 ? "day" : "days"})`,
         price: totalPrice,
         quantity: 1,
-        image: item.equipment.image,
+        image: item.equipment.imageUrl || "/placeholder.svg",
         type: "rental",
       })
     })
 
     toast({
       title: "Added to cart",
-      description: `${selectedEquipment.length} item${selectedEquipment.length > 1 ? "s" : ""} added to your cart.`,
+      description: `${selectedEquipment.length} ${selectedEquipment.length === 1 ? "item" : "items"} added to cart.`,
     })
 
     // Сброс выбора
@@ -186,64 +171,153 @@ export default function RentalPage() {
 
   const getTotalPrice = () => {
     return selectedEquipment.reduce((total, item) => {
-      return total + item.equipment.price * item.dates.length
+      return total + item.equipment.pricePerDay * item.dates.length
     }, 0)
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-10 px-4">
+        <h1 className="text-3xl md:text-4xl font-bold mb-6">Equipment Rental</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="aspect-video bg-gray-200"></div>
+                  <CardContent className="p-4">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-6">
+            <Card className="animate-pulse">
+              <div className="h-64 bg-gray-200"></div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="container mx-auto py-10 px-4">
       <h1 className="text-3xl md:text-4xl font-bold mb-6">Equipment Rental</h1>
       <p className="text-muted-foreground mb-8 max-w-3xl">
-        Select multiple pieces of equipment and choose specific dates for your rental. Perfect for events, practice
-        sessions, or performances.
+        Select multiple pieces of equipment and specify rental dates. Perfect for events, rehearsals,
+        or performances.
       </p>
+
+      {/* Поиск */}
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search equipment..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <Tabs defaultValue="all" value={activeCategory} onValueChange={setActiveCategory} className="mb-8">
-            <TabsList className="w-full grid grid-cols-4 md:grid-cols-5">
+            <TabsList className="w-full max-w-fit mx-auto grid" style={{gridTemplateColumns: `repeat(${categories.length + 1}, minmax(0, 1fr))`}}>
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="drums">Drums</TabsTrigger>
-              <TabsTrigger value="guitars">Guitars</TabsTrigger>
-              <TabsTrigger value="sound">Sound</TabsTrigger>
-              <TabsTrigger value="keyboards">Keyboards</TabsTrigger>
+              {categories.map(category => (
+                <TabsTrigger key={category} value={category}>
+                  {category}
+                </TabsTrigger>
+              ))}
             </TabsList>
           </Tabs>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredEquipment.map((item) => (
-              <Card
-                key={item.id}
-                className={cn(
-                  "transition-all",
-                  isEquipmentSelected(item.id) ? "border-yellow-500 shadow-md bg-yellow-50 dark:bg-yellow-950/20" : "",
-                )}
+          {filteredEquipment.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Equipment not found</h2>
+              <p className="text-muted-foreground mb-4">Try changing your search criteria</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery("")
+                  setActiveCategory("all")
+                }}
               >
-                <div className="relative aspect-video">
-                  <Image
-                    src={item.image || "/placeholder.svg"}
-                    alt={item.name}
-                    fill
-                    className="object-cover rounded-t-lg"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Checkbox
-                      checked={isEquipmentSelected(item.id)}
-                      onCheckedChange={(checked) => handleEquipmentToggle(item, checked as boolean)}
-                      className="bg-white border-2"
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredEquipment.map((item) => (
+                <Card
+                  key={item.id}
+                  className={cn(
+                    "cursor-pointer transition-all hover:shadow-lg",
+                    isEquipmentSelected(item.id) 
+                      ? "border-yellow-500 shadow-md bg-yellow-50 dark:bg-yellow-950/20 ring-2 ring-yellow-200" 
+                      : "hover:border-gray-300",
+                    item.inStock === 0 && "opacity-60 cursor-not-allowed"
+                  )}
+                  onClick={() => {
+                    if (item.inStock > 0) {
+                      handleEquipmentToggle(item, !isEquipmentSelected(item.id))
+                    }
+                  }}
+                >
+                  <div className="relative aspect-video">
+                    <Image
+                      src={item.imageUrl || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover rounded-t-lg"
                     />
+                    <div className="absolute top-2 right-2 pointer-events-none">
+                      <Checkbox
+                        checked={isEquipmentSelected(item.id)}
+                        className="bg-white border-2 pointer-events-none"
+                        disabled={item.inStock === 0}
+                      />
+                    </div>
+                    {item.inStock <= 2 && item.inStock > 0 && (
+                      <Badge className="absolute top-2 left-2 bg-orange-500">
+                        {item.inStock} left
+                      </Badge>
+                    )}
+                    {item.inStock === 0 && (
+                      <Badge className="absolute top-2 left-2 bg-red-500">
+                        Out of stock
+                      </Badge>
+                    )}
                   </div>
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold">{item.name}</h3>
-                    <p className="font-bold">${item.price}/day</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{item.name}</h3>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {item.category}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">${item.pricePerDay}/day</p>
+                        <Badge variant="secondary" className="text-xs">
+                          In stock: {item.inStock}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -252,9 +326,9 @@ export default function RentalPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5" />
-                Select Rental Dates
+                Select rental dates
               </CardTitle>
-              <CardDescription>Choose specific dates when you need the equipment</CardDescription>
+              <CardDescription>Specify the dates when you need the equipment</CardDescription>
             </CardHeader>
             <CardContent>
               <Calendar
@@ -270,7 +344,7 @@ export default function RentalPage() {
                   <div className="flex flex-wrap gap-1 mt-2">
                     {selectedDates.map((date, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
-                        {format(date, "MMM dd")}
+                        {format(date, "dd MMM")}
                       </Badge>
                     ))}
                   </div>
@@ -283,8 +357,8 @@ export default function RentalPage() {
           {selectedEquipment.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Selected Equipment</CardTitle>
-                <CardDescription>Manage dates for each item individually</CardDescription>
+                <CardTitle>Selected equipment</CardTitle>
+                <CardDescription>Manage dates for each item</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {selectedEquipment.map((item, index) => (
@@ -293,7 +367,7 @@ export default function RentalPage() {
                       <div className="flex items-center gap-2">
                         <div className="relative w-10 h-10 overflow-hidden rounded">
                           <Image
-                            src={item.equipment.image || "/placeholder.svg"}
+                            src={item.equipment.imageUrl || "/placeholder.svg"}
                             alt={item.equipment.name}
                             fill
                             className="object-cover"
@@ -302,8 +376,8 @@ export default function RentalPage() {
                         <div>
                           <p className="font-medium text-sm">{item.equipment.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            ${item.equipment.price}/day × {item.dates.length} days = $
-                            {item.equipment.price * item.dates.length}
+                            ${item.equipment.pricePerDay}/day × {item.dates.length} {item.dates.length === 1 ? "day" : "days"} = $
+                            {item.equipment.pricePerDay * item.dates.length}
                           </p>
                         </div>
                       </div>
@@ -331,7 +405,7 @@ export default function RentalPage() {
                     <div className="flex flex-wrap gap-1">
                       {item.dates.map((date, dateIndex) => (
                         <Badge key={dateIndex} variant="outline" className="text-xs">
-                          {format(date, "MMM dd")}
+                          {format(date, "dd MMM")}
                         </Badge>
                       ))}
                     </div>
@@ -354,7 +428,7 @@ export default function RentalPage() {
                   disabled={selectedEquipment.length === 0}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  Add All to Cart
+                  Add all to cart
                 </Button>
               </CardFooter>
             </Card>
@@ -363,28 +437,28 @@ export default function RentalPage() {
       </div>
 
       <div className="mt-16 bg-muted rounded-lg p-8">
-        <h2 className="text-2xl font-bold mb-6">How It Works</h2>
+        <h2 className="text-2xl font-bold mb-6">How it works</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
             <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-black font-bold">1</span>
             </div>
-            <h3 className="font-semibold mb-2">Select Equipment</h3>
+            <h3 className="font-semibold mb-2">Select equipment</h3>
             <p className="text-sm text-muted-foreground">Choose multiple items using checkboxes</p>
           </div>
           <div className="text-center">
             <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-black font-bold">2</span>
             </div>
-            <h3 className="font-semibold mb-2">Pick Dates</h3>
+            <h3 className="font-semibold mb-2">Specify dates</h3>
             <p className="text-sm text-muted-foreground">Select specific dates when you need the equipment</p>
           </div>
           <div className="text-center">
             <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-black font-bold">3</span>
             </div>
-            <h3 className="font-semibold mb-2">Add to Cart</h3>
-            <p className="text-sm text-muted-foreground">Review and add everything to your cart at once</p>
+            <h3 className="font-semibold mb-2">Add to cart</h3>
+            <p className="text-sm text-muted-foreground">Review and add all items to cart simultaneously</p>
           </div>
         </div>
       </div>

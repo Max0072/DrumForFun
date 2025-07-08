@@ -168,9 +168,9 @@ export default function AboutPage() {
                 <MapPin className="h-6 w-6 text-yellow-500 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Our Location</h3>
-                  <p className="text-muted-foreground">123 Music Street, Rhythm City, RC 10101</p>
+                  <p className="text-muted-foreground">Petrou Tsirou 2B, Limassol 3021</p>
                   <p className="text-muted-foreground mt-1">
-                    We're located in downtown Rhythm City, with easy access to public transportation and parking.
+                    We're located in Limassol, close to the city center, on Macario avenue.
                   </p>
                 </div>
               </div>
@@ -179,13 +179,13 @@ export default function AboutPage() {
                 <Phone className="h-6 w-6 text-yellow-500 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                  <p className="text-muted-foreground">(555) 123-4567</p>
+                  <p className="text-muted-foreground">+357 97413557</p>
                   <p className="text-muted-foreground mt-1">
                     Available Monday-Friday: 9am-8pm
                     <br />
-                    Saturday: 10am-6pm
+                    Saturday: 9am-8pm
                     <br />
-                    Sunday: 12pm-5pm
+                    Sunday: 9pm-8pm
                   </p>
                 </div>
               </div>
@@ -194,7 +194,7 @@ export default function AboutPage() {
                 <Mail className="h-6 w-6 text-yellow-500 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Email</h3>
-                  <p className="text-muted-foreground">info@drumforfun.com</p>
+                  <p className="text-muted-foreground">admin@drum4fun.club</p>
                   <p className="text-muted-foreground mt-1">
                     For general inquiries, bookings, and information about our services.
                   </p>
@@ -211,11 +211,11 @@ export default function AboutPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Saturday</span>
-                  <span>10:00 AM - 6:00 PM</span>
+                  <span>9:00 AM - 8:00 PM</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Sunday</span>
-                  <span>12:00 PM - 5:00 PM</span>
+                  <span>9:00 PM - 8:00 PM</span>
                 </div>
               </div>
             </div>

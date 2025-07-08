@@ -14,10 +14,10 @@ import { ModeToggle } from "@/components/mode-toggle"
 const routes = [
   { href: "/", label: "Home" },
   { href: "/booking", label: "Booking" },
-  { href: "/lessons", label: "Lessons" },
+  // { href: "/lessons", label: "Lessons" },
   { href: "/store", label: "Store" },
   { href: "/rental", label: "Rental" },
-  { href: "/drum-show", label: "Drum Show" },
+  // { href: "/drum-show", label: "Drum Show" },
   { href: "/about", label: "About Us" },
 ]
 
