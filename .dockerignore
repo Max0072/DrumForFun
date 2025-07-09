@@ -6,10 +6,9 @@ npm-debug.log*
 .next
 out
 
-# Environment files
+# Environment files (исключаем .env.production для production сборки)
 .env
 .env.local
-.env.production
 .env.development
 
 # Database
@@ -38,8 +37,9 @@ Dockerfile*
 docker-compose*.yml
 .dockerignore
 
-# Scripts
-*.sh
+# Scripts (исключаем деплой скрипты, но они не нужны в контейнере)
+deploy-*.sh
+docker-*.sh
 
 # Documentation
 *.md
