@@ -8,6 +8,8 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
+# Удаляем pnpm-lock.yaml если он есть, чтобы избежать конфликтов с npm
+RUN rm -f pnpm-lock.yaml
 RUN npm ci --only=production
 
 # Rebuild the source code only when needed
@@ -15,6 +17,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Удаляем pnpm-lock.yaml если он есть
+RUN rm -f pnpm-lock.yaml
 
 # Next.js collects completely anonymous telemetry data about general usage.
 ENV NEXT_TELEMETRY_DISABLED 1

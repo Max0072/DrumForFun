@@ -1,18 +1,25 @@
-# docker-compose.dev.yml - для разработки с SQLite
+# Docker Compose для разработки с SQLite
 version: '3.8'
 
 services:
-  # Next.js приложение для разработки
   web:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
-    env_file:
-      - .env.docker
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=sqlite:./data/bookings.db
+      - EMAIL_USER=${EMAIL_USER:-your-email@gmail.com}
+      - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD:-your-app-password}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@drumschool.com}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@drumschool.com}
+      - ADMIN_LOGIN=${ADMIN_LOGIN:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - AUTH_SECRET=${AUTH_SECRET:-your-secret-key}
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
     volumes:
-      # Сохраняем базу данных SQLite с правильными правами
       - ./data:/app/data
     restart: unless-stopped
     networks:
