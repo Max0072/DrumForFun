@@ -29,7 +29,7 @@ export async function createSession(): Promise<string> {
   // Устанавливаем cookie на 24 часа
   cookieStore.set('admin_session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Временно отключено для HTTP тестирования
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000 // 24 часа
   })
