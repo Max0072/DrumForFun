@@ -10,21 +10,30 @@ interface EmailOptions {
 
 // Создаем транспортер для отправки email
 const createTransporter = () => {
-  // Для разработки используем Ethereal Email (фейковый SMTP)
-  // В production замените на настоящий SMTP сервис
-  if (process.env.NODE_ENV === 'development') {
-    // Для development - используем Gmail или другой сервис
-    return nodemailer.createTransport({
-      service: 'gmail',
+  // Если настроен SendGrid API ключ
+  if (process.env.SENDGRID_API_KEY) {
+    return nodemailer.createTransporter({
+      service: 'SendGrid',
       auth: {
-        user: process.env.EMAIL_USER, // ваш email
-        pass: process.env.EMAIL_APP_PASSWORD, // пароль приложения
+        user: 'apikey',
+        pass: process.env.SENDGRID_API_KEY,
       },
     })
   }
 
-  // Production конфигурация
-  return nodemailer.createTransport({
+  // Для разработки используем Gmail
+  if (process.env.NODE_ENV === 'development') {
+    return nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD,
+      },
+    })
+  }
+
+  // Fallback: старая SMTP конфигурация
+  return nodemailer.createTransporter({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_SECURE === 'true',
@@ -39,13 +48,13 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions) {
   try {
     // Отладочная информация для email
     console.log('📧 Email debug:')
+    console.log('SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY)
     console.log('EMAIL_USER:', process.env.EMAIL_USER)
-    console.log('EMAIL_APP_PASSWORD exists:', !!process.env.EMAIL_APP_PASSWORD)
-    console.log('EMAIL_APP_PASSWORD length:', process.env.EMAIL_APP_PASSWORD?.length)
     
-    // Если EMAIL_USER не настроен, просто логируем без отправки
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD || 
-        process.env.EMAIL_USER === 'your-email@gmail.com') {
+    // Если ни SendGrid, ни EMAIL_USER не настроены, просто логируем
+    if (!process.env.SENDGRID_API_KEY && 
+        (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD || 
+         process.env.EMAIL_USER === 'your-email@gmail.com')) {
       console.log('📧 Email (demo mode):', { to, subject })
       console.log('📧 Content:', html.substring(0, 200) + '...')
       return { success: true, messageId: 'demo-' + Date.now() }
@@ -54,7 +63,7 @@ export async function sendEmail({ to, subject, html, text }: EmailOptions) {
     const transporter = createTransporter()
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'noreply@drumschool.com',
+      from: process.env.EMAIL_FROM || 'noreply@drum4fun.club',
       to,
       subject,
       html,
