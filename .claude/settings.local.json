@@ -4,7 +4,13 @@
       "Bash(sqlite3:*)",
       "Bash(node:*)",
       "Bash(rg:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker build:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

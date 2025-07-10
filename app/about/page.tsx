@@ -11,7 +11,7 @@ export default function AboutPage() {
         <div>
           <h1 className="text-3xl md:text-4xl font-bold mb-6">About DrumForFun</h1>
           <p className="text-muted-foreground mb-6">
-            Founded in 2015, DrumForFun started as a small drum school with a vision to create a space where music
+            Founded in 2024, DrumForFun started as a small drum school with a vision to create a space where music
             enthusiasts of all ages could learn, practice, and celebrate music together.
           </p>
           <p className="text-muted-foreground mb-6">
@@ -161,109 +161,70 @@ export default function AboutPage() {
 
       <div className="mb-16">
         <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Contact Us</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <MapPin className="h-6 w-6 text-yellow-500 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Our Location</h3>
-                  <p className="text-muted-foreground">Petrou Tsirou 2B, Limassol 3021</p>
-                  <p className="text-muted-foreground mt-1">
-                    We're located in Limassol, close to the city center, on Macario avenue.
-                  </p>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <MapPin className="h-12 w-12 text-yellow-500" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Our Location</h3>
+            <p className="text-muted-foreground mb-2">Petrou Tsirou 2B</p>
+            <p className="text-muted-foreground mb-2">Limassol 3021</p>
+            <p className="text-sm text-muted-foreground">
+              Close to the city center, on Macario avenue
+            </p>
+          </Card>
 
-              <div className="flex items-start gap-4">
-                <Phone className="h-6 w-6 text-yellow-500 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                  <p className="text-muted-foreground">+357 97413557</p>
-                  <p className="text-muted-foreground mt-1">
-                    Available Monday-Friday: 9am-8pm
-                    <br />
-                    Saturday: 9am-8pm
-                    <br />
-                    Sunday: 9pm-8pm
-                  </p>
-                </div>
-              </div>
+          <Card className="p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <Phone className="h-12 w-12 text-yellow-500" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Phone</h3>
+            <p className="text-muted-foreground mb-2 font-medium">+357 97413557</p>
+            <p className="text-sm text-muted-foreground">
+              Call us for inquiries and bookings
+            </p>
+          </Card>
 
-              <div className="flex items-start gap-4">
-                <Mail className="h-6 w-6 text-yellow-500 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-lg mb-1">Email</h3>
-                  <p className="text-muted-foreground">admin@drum4fun.club</p>
-                  <p className="text-muted-foreground mt-1">
-                    For general inquiries, bookings, and information about our services.
-                  </p>
-                </div>
+          <Card className="p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <Mail className="h-12 w-12 text-yellow-500" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Email</h3>
+            <p className="text-muted-foreground mb-2 font-medium">admin@drum4fun.club</p>
+            <p className="text-sm text-muted-foreground">
+              For general inquiries and information
+            </p>
+          </Card>
+
+          <Card className="p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="h-12 w-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                <span className="text-black font-bold text-xl">⏰</span>
               </div>
             </div>
-
-            <div className="mt-8">
-              <h3 className="font-semibold text-lg mb-4">Business Hours</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Monday - Friday</span>
-                  <span>9:00 AM - 8:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Saturday</span>
-                  <span>9:00 AM - 8:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Sunday</span>
-                  <span>9:00 PM - 8:00 PM</span>
-                </div>
-              </div>
+            <h3 className="font-semibold text-lg mb-2">Hours</h3>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p>Mon-Fri: 9AM-8PM</p>
+              <p>Saturday: 9AM-8PM</p>
+              <p>Sunday: 9PM-8PM</p>
             </div>
-          </div>
-
-          <div>
-            <form className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
-                    Name
-                  </label>
-                  <input id="name" className="w-full p-2 border rounded-md" placeholder="Your name" />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </label>
-                  <input id="email" type="email" className="w-full p-2 border rounded-md" placeholder="Your email" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="subject" className="text-sm font-medium">
-                  Subject
-                </label>
-                <input id="subject" className="w-full p-2 border rounded-md" placeholder="Subject" />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-medium">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  rows={5}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="Your message"
-                ></textarea>
-              </div>
-              <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-black">Send Message</Button>
-            </form>
-          </div>
+          </Card>
         </div>
       </div>
 
       <div>
         <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Find Us</h2>
-        <div className="h-[400px] rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-          <p className="text-muted-foreground">Interactive map would be embedded here</p>
+        <div className="h-[400px] rounded-lg overflow-hidden">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3278.8572!2d33.0466123!3d34.6866671!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14e7339f8b5b8b8b%3A0x8b8b8b8b8b8b8b8b!2sPetrou%20Tsirou%202B%2C%20Limassol%203021%2C%20Cyprus!5e0!3m2!1sen!2scy!4v1699999999999!5m2!1sen!2scy"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="DrumForFun Location - Petrou Tsirou 2B, Limassol"
+          ></iframe>
         </div>
       </div>
     </div>
