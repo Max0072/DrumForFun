@@ -253,23 +253,38 @@ class Database {
   }
 
   private async initializeRooms() {
-    const rooms: Room[] = [
-      { id: 'drums1', name: 'Big studio #1', type: 'drums', capacity: 6, description: 'Big drum room' },
-      { id: 'drums2', name: 'Upper-medium #2', type: 'drums', capacity: 4, description: 'Upper medium drum room' },
-      { id: 'guitar1', name: 'Upper-small #3', type: 'guitar', capacity: 8, description: 'Upper small drum-guitar room' }
-    ]
-
-    for (const room of rooms) {
-      await new Promise<void>((resolve, reject) => {
-        this.db!.run(
-          'INSERT OR IGNORE INTO rooms (id, name, type, capacity, description) VALUES (?, ?, ?, ?, ?)',
-          [room.id, room.name, room.type, room.capacity, room.description],
-          (err) => {
-            if (err) reject(err)
-            else resolve()
-          }
-        )
+    // Check if rooms table is empty
+    const roomsCount = await new Promise<number>((resolve, reject) => {
+      this.db!.get('SELECT COUNT(*) as count FROM rooms', (err, row: any) => {
+        if (err) reject(err)
+        else resolve(row.count)
       })
+    })
+
+    // Only initialize default rooms if table is completely empty
+    if (roomsCount === 0) {
+      console.log('🏢 Initializing default rooms...')
+      const rooms: Room[] = [
+        { id: 'drums1', name: 'Big studio #1', type: 'drums', capacity: 6, description: 'Big drum room' },
+        { id: 'drums2', name: 'Upper-medium #2', type: 'drums', capacity: 4, description: 'Upper medium drum room' },
+        { id: 'guitar1', name: 'Upper-small #3', type: 'guitar', capacity: 8, description: 'Upper small drum-guitar room' }
+      ]
+
+      for (const room of rooms) {
+        await new Promise<void>((resolve, reject) => {
+          this.db!.run(
+            'INSERT INTO rooms (id, name, type, capacity, description) VALUES (?, ?, ?, ?, ?)',
+            [room.id, room.name, room.type, room.capacity, room.description],
+            (err) => {
+              if (err) reject(err)
+              else resolve()
+            }
+          )
+        })
+      }
+      console.log('✅ Default rooms initialized')
+    } else {
+      console.log(`🏢 Found ${roomsCount} existing rooms, skipping initialization`)
     }
   }
 
@@ -443,6 +458,13 @@ class Database {
           
           const availableSlots: string[] = []
 
+          // If no rooms exist, no slots are available
+          if (rooms.length === 0) {
+            console.log('🚫 No rooms available - all slots unavailable')
+            resolve(availableSlots)
+            return
+          }
+
           for (const slot of allSlots) {
             const slotHour = parseInt(slot.split(':')[0])
             let hasAvailableRoom = false
@@ -450,6 +472,12 @@ class Database {
             // Get suitable rooms for this booking type
             const suitableRooms = rooms.filter(room => this.isRoomSuitable(room, bookingType))
             console.log(`🎯 Suitable rooms for ${bookingType} at ${slot}:`, suitableRooms.map(r => r.name))
+
+            // If no suitable rooms for this booking type, skip this slot
+            if (suitableRooms.length === 0) {
+              console.log(`🚫 No suitable rooms for ${bookingType} at ${slot}`)
+              continue
+            }
 
             // Check each suitable room
             for (const room of suitableRooms) {
@@ -1057,6 +1085,72 @@ class Database {
         } else {
           console.log(`✅ Updated ${this.changes} past bookings to completed status`)
           resolve(this.changes)
+        }
+      })
+    })
+  }
+
+  async getBookingsByRoom(roomId: string): Promise<BookingData[]> {
+    await this.connect()
+    
+    const query = `
+      SELECT * FROM bookings 
+      WHERE roomId = ?
+      ORDER BY date DESC, time DESC
+    `
+    
+    return new Promise((resolve, reject) => {
+      this.db!.all(query, [roomId], (err, rows: any[]) => {
+        if (err) {
+          console.error('❌ Error fetching bookings by room:', err)
+          reject(err)
+        } else {
+          resolve(rows || [])
+        }
+      })
+    })
+  }
+
+  async createRoom(roomData: Room): Promise<void> {
+    await this.connect()
+    
+    const query = `
+      INSERT INTO rooms (id, name, type, capacity, description)
+      VALUES (?, ?, ?, ?, ?)
+    `
+    
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, [
+        roomData.id,
+        roomData.name,
+        roomData.type,
+        roomData.capacity,
+        roomData.description || null
+      ], function(err) {
+        if (err) {
+          console.error('❌ Error creating room:', err)
+          reject(err)
+        } else {
+          console.log(`✅ Room ${roomData.id} created successfully`)
+          resolve()
+        }
+      })
+    })
+  }
+
+  async deleteRoom(roomId: string): Promise<void> {
+    await this.connect()
+    
+    const query = `DELETE FROM rooms WHERE id = ?`
+    
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, [roomId], function(err) {
+        if (err) {
+          console.error('❌ Error deleting room:', err)
+          reject(err)
+        } else {
+          console.log(`✅ Room ${roomId} deleted successfully`)
+          resolve()
         }
       })
     })

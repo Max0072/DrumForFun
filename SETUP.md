@@ -24,7 +24,7 @@ npm install nodemailer sqlite3 @types/nodemailer
    - Выберите "Mail" и "Other" (введите "Drum School")
    - Скопируйте сгенерированный пароль
 
-3. Отредактируйте `.env.local`:
+3. Отредактируйте `.env.production`:
 ```env
 EMAIL_USER=your-gmail@gmail.com
 EMAIL_PASS=your-app-password-from-step-2

@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { 
   CalendarIcon,
@@ -22,7 +23,9 @@ import {
   Plus,
   Trash2,
   Mail,
-  User
+  User,
+  Edit,
+  X
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -66,6 +69,19 @@ export default function AdminRoomsContent() {
   const [schedule, setSchedule] = useState<RoomSchedule[]>([])
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [loading, setLoading] = useState(true)
+  const [editMode, setEditMode] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    room: Room | null;
+  }>({ isOpen: false, room: null })
+  const [createDialog, setCreateDialog] = useState(false)
+  const [newRoom, setNewRoom] = useState({
+    id: '',
+    name: '',
+    type: 'drums' as 'drums' | 'guitar' | 'universal',
+    capacity: 4,
+    description: ''
+  })
   const [slotDialog, setSlotDialog] = useState<SlotDialogData>({
     isOpen: false,
     room: null,
@@ -309,6 +325,90 @@ export default function AdminRoomsContent() {
     }
   }
 
+  const handleDeleteRoom = async () => {
+    if (!deleteDialog.room) return
+
+    setProcessing(true)
+    try {
+      const response = await fetch(`/api/admin/rooms?id=${deleteDialog.room.id}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: "Room deleted successfully",
+        })
+        setDeleteDialog({ isOpen: false, room: null })
+        fetchRooms()
+        fetchSchedule(selectedDate)
+      } else {
+        throw new Error(result.error || 'Failed to delete room')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : "Failed to delete room",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleCreateRoom = async () => {
+    if (!newRoom.id || !newRoom.name || !newRoom.type || !newRoom.capacity) {
+      toast({
+        title: 'Error',
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setProcessing(true)
+    try {
+      const response = await fetch('/api/admin/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRoom),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: "Room created successfully",
+        })
+        setCreateDialog(false)
+        setNewRoom({
+          id: '',
+          name: '',
+          type: 'drums',
+          capacity: 4,
+          description: ''
+        })
+        fetchRooms()
+        fetchSchedule(selectedDate)
+      } else {
+        throw new Error(result.error || 'Failed to create room')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : "Failed to create room",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="animate-pulse">
@@ -373,17 +473,60 @@ export default function AdminRoomsContent() {
 
       {/* Rooms Overview */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">Rooms Overview</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Rooms Overview</h2>
+          <div className="flex items-center gap-2">
+            {editMode && (
+              <Button
+                variant="default"
+                onClick={() => setCreateDialog(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Room
+              </Button>
+            )}
+            <Button
+              variant={editMode ? "destructive" : "outline"}
+              onClick={() => setEditMode(!editMode)}
+              className="gap-2"
+            >
+              {editMode ? (
+                <>
+                  <X className="h-4 w-4" />
+                  Exit Edit Mode
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4" />
+                  Manage Rooms
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {rooms.map((room) => (
             <Card key={room.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{room.name}</CardTitle>
-                  <Badge className={getRoomTypeColor(room.type)}>
-                    {getRoomTypeIcon(room.type)}
-                    <span className="ml-1">{getRoomTypeLabel(room.type)}</span>
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getRoomTypeColor(room.type)}>
+                      {getRoomTypeIcon(room.type)}
+                      <span className="ml-1">{getRoomTypeLabel(room.type)}</span>
+                    </Badge>
+                    {editMode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteDialog({ isOpen: true, room })}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <CardDescription>{room.description}</CardDescription>
               </CardHeader>
@@ -668,6 +811,179 @@ export default function AdminRoomsContent() {
                 {processing ? 'Loading...' : 'Create Booking'}
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Room Confirmation Dialog */}
+      <Dialog open={deleteDialog.isOpen} onOpenChange={() => setDeleteDialog({ isOpen: false, room: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete Room
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this room? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteDialog.room && (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-red-900">{deleteDialog.room.name}</div>
+                    <Badge className={getRoomTypeColor(deleteDialog.room.type)}>
+                      {getRoomTypeIcon(deleteDialog.room.type)}
+                      <span className="ml-1">{getRoomTypeLabel(deleteDialog.room.type)}</span>
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-red-700">
+                    Capacity: {deleteDialog.room.capacity} people
+                  </div>
+                  {deleteDialog.room.description && (
+                    <div className="text-sm text-red-700">
+                      {deleteDialog.room.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <strong>Warning:</strong> This room will be permanently deleted. 
+                  Any future bookings for this room will be affected.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialog({ isOpen: false, room: null })}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRoom}
+              disabled={processing}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              {processing ? 'Deleting...' : 'Delete Room'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Room Dialog */}
+      <Dialog open={createDialog} onOpenChange={setCreateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Create New Room
+            </DialogTitle>
+            <DialogDescription>
+              Add a new room to your drum school facility.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="roomId">Room ID *</Label>
+                <Input
+                  id="roomId"
+                  placeholder="e.g., drums3"
+                  value={newRoom.id}
+                  onChange={(e) => setNewRoom({ ...newRoom, id: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="roomType">Type *</Label>
+                <Select value={newRoom.type} onValueChange={(value: 'drums' | 'guitar' | 'universal') => setNewRoom({ ...newRoom, type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="drums">Drums</SelectItem>
+                    <SelectItem value="guitar">Guitar</SelectItem>
+                    <SelectItem value="universal">Universal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="roomName">Room Name *</Label>
+              <Input
+                id="roomName"
+                placeholder="e.g., Professional Studio #3"
+                value={newRoom.name}
+                onChange={(e) => setNewRoom({ ...newRoom, name: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="roomCapacity">Capacity *</Label>
+              <Select value={newRoom.capacity.toString()} onValueChange={(value) => setNewRoom({ ...newRoom, capacity: parseInt(value) })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select capacity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 person</SelectItem>
+                  <SelectItem value="2">2 people</SelectItem>
+                  <SelectItem value="3">3 people</SelectItem>
+                  <SelectItem value="4">4 people</SelectItem>
+                  <SelectItem value="5">5 people</SelectItem>
+                  <SelectItem value="6">6 people</SelectItem>
+                  <SelectItem value="8">8 people</SelectItem>
+                  <SelectItem value="10">10 people</SelectItem>
+                  <SelectItem value="12">12 people</SelectItem>
+                  <SelectItem value="15">15 people</SelectItem>
+                  <SelectItem value="20">20 people</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="roomDescription">Description</Label>
+              <Textarea
+                id="roomDescription"
+                placeholder="Optional description of the room..."
+                value={newRoom.description}
+                onChange={(e) => setNewRoom({ ...newRoom, description: e.target.value })}
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Preview:</strong> {newRoom.name || 'Room Name'} ({newRoom.type || 'type'}) - {newRoom.capacity} people
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setCreateDialog(false)}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateRoom}
+              disabled={processing || !newRoom.id || !newRoom.name}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {processing ? 'Creating...' : 'Create Room'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
