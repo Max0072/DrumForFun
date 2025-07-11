@@ -138,3 +138,4 @@ drum-for-fun/
 ## 📝 Лицензия
 
 MIT License# Test commit to check Vercel deployment trigger
+# Second test commit to verify Vercel is disabled
