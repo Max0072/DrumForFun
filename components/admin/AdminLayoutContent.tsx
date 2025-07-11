@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from './ThemeToggle'
+import { LanguageSwitcher } from './LanguageSwitcher'
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -82,7 +83,10 @@ export default function AdminLayoutContent({ children }: AdminLayoutContentProps
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div className="flex-shrink-0 flex items-center justify-between px-4">
               <h1 className="text-lg font-semibold text-card-foreground">Admin Panel</h1>
-              <ThemeToggle />
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <ThemeToggle />
+              </div>
             </div>
             <nav className="mt-5 px-2 space-y-1">
               {navigation.map((item) => {
@@ -129,7 +133,10 @@ export default function AdminLayoutContent({ children }: AdminLayoutContentProps
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center justify-between flex-shrink-0 px-4">
                 <h1 className="text-lg font-semibold text-card-foreground">Admin Panel</h1>
-                <ThemeToggle />
+                <div className="flex items-center gap-2">
+                  <LanguageSwitcher />
+                  <ThemeToggle />
+                </div>
               </div>
               <nav className="mt-5 flex-1 px-2 space-y-1">
                 {navigation.map((item) => {
