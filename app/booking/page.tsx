@@ -601,7 +601,7 @@ function BookingForm() {
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="no-slots-available" disabled>
                           Нет доступных слотов на выбранную дату
                         </SelectItem>
                       )}
