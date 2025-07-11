@@ -1,5 +1,4 @@
 # Простой docker-compose для SQLite на VPS
-version: '3.8'
 
 services:
   web:

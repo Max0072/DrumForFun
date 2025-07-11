@@ -69,7 +69,7 @@ sleep 10
 
 # Проверяем статус
 echo "📊 Проверяем статус сервисов..."
-docker-compose -f docker-compose.prod.yml ps
+docker-compose -f docker-compose.prod.yml --env-file .env.production ps
 
 # Проверяем доступность
 echo "🌐 Тестируем доступность..."
@@ -94,9 +94,9 @@ echo "   HTTPS: https://drum4fun.club"
 echo "   Админ: https://drum4fun.club/admin/login"
 echo ""
 echo "📋 Полезные команды:"
-echo "   Логи:     docker-compose -f docker-compose.prod.yml logs -f"
-echo "   Рестарт:  docker-compose -f docker-compose.prod.yml restart"
-echo "   Стоп:     docker-compose -f docker-compose.prod.yml down"
+echo "   Логи:     docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f"
+echo "   Рестарт:  docker-compose -f docker-compose.prod.yml --env-file .env.production restart"
+echo "   Стоп:     docker-compose -f docker-compose.prod.yml --env-file .env.production down"
 echo ""
 echo "🔒 SSL сертификаты:"
 echo "   Автообновление: добавьте в crontab обновление certbot"
