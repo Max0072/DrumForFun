@@ -18,11 +18,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Load language from localStorage on client side
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedLanguage = localStorage.getItem('admin-language') as Language
-      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ru')) {
-        setLanguageState(savedLanguage)
-        setTranslations(getTranslations(savedLanguage))
-      }
+      // Force English language - clear any saved Russian language
+      localStorage.setItem('admin-language', 'en')
+      setLanguageState('en')
+      setTranslations(getTranslations('en'))
     }
   }, [])
 
