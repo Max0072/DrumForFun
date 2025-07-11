@@ -562,7 +562,7 @@ export default function AdminRoomsContent() {
                     !room.isVisible && "text-gray-500"
                   )}>
                     {room.name}
-                    {!room.isVisible && (
+                    {!room.isVisible && !editMode && (
                       <EyeOff className="h-4 w-4 text-gray-400" />
                     )}
                   </CardTitle>
