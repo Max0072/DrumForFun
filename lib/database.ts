@@ -243,8 +243,6 @@ class Database {
         })
       })
 
-      // Add rooms if they don't exist
-      await this.initializeRooms()
       console.log('✅ Tables ready')
     } catch (err) {
       console.error('❌ Error creating tables:', err)
