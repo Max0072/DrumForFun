@@ -98,6 +98,51 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    // Проверяем авторизацию
+    const isAuthenticated = await requireAuth()
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Необходима авторизация' },
+        { status: 401 }
+      )
+    }
+
+    // Получаем данные из запроса
+    const body = await request.json()
+    const { roomId, action } = body
+
+    if (!roomId) {
+      return NextResponse.json(
+        { error: 'ID комнаты не указан' },
+        { status: 400 }
+      )
+    }
+
+    if (action === 'toggle-visibility') {
+      // Переключаем видимость комнаты
+      await database.toggleRoomVisibility(roomId)
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Видимость комнаты изменена' 
+      })
+    }
+
+    return NextResponse.json(
+      { error: 'Неизвестное действие' },
+      { status: 400 }
+    )
+  } catch (error) {
+    console.error('Ошибка при обновлении комнаты:', error)
+    return NextResponse.json(
+      { error: 'Ошибка сервера' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     // Проверяем авторизацию

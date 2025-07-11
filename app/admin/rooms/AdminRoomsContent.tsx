@@ -25,7 +25,9 @@ import {
   Mail,
   User,
   Edit,
-  X
+  X,
+  Eye,
+  EyeOff
 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -36,6 +38,7 @@ interface Room {
   type: 'drums' | 'guitar' | 'universal'
   capacity: number
   description?: string
+  isVisible?: boolean
 }
 
 interface RoomSchedule {
@@ -80,7 +83,8 @@ export default function AdminRoomsContent() {
     name: '',
     type: 'drums' as 'drums' | 'guitar' | 'universal',
     capacity: 4,
-    description: ''
+    description: '',
+    isVisible: true
   })
   const [slotDialog, setSlotDialog] = useState<SlotDialogData>({
     isOpen: false,
@@ -358,6 +362,43 @@ export default function AdminRoomsContent() {
     }
   }
 
+  const handleToggleVisibility = async (room: Room) => {
+    setProcessing(true)
+    try {
+      const response = await fetch('/api/admin/rooms', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId: room.id,
+          action: 'toggle-visibility'
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: `Room ${room.isVisible ? 'hidden' : 'visible'} successfully`,
+        })
+        fetchRooms()
+        fetchSchedule(selectedDate)
+      } else {
+        throw new Error(result.error || 'Failed to toggle visibility')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : "Failed to toggle visibility",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const handleCreateRoom = async () => {
     if (!newRoom.id || !newRoom.name || !newRoom.type || !newRoom.capacity) {
       toast({
@@ -391,7 +432,8 @@ export default function AdminRoomsContent() {
           name: '',
           type: 'drums',
           capacity: 4,
-          description: ''
+          description: '',
+          isVisible: true
         })
         fetchRooms()
         fetchSchedule(selectedDate)
@@ -507,24 +549,50 @@ export default function AdminRoomsContent() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {rooms.map((room) => (
-            <Card key={room.id}>
+            <Card key={room.id} className={cn(
+              "transition-all duration-200",
+              room.isVisible === false && "opacity-60 border-dashed"
+            )}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{room.name}</CardTitle>
+                  <CardTitle className={cn(
+                    "text-lg flex items-center gap-2",
+                    room.isVisible === false && "text-gray-500"
+                  )}>
+                    {room.name}
+                    {room.isVisible === false && (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    )}
+                  </CardTitle>
                   <div className="flex items-center gap-2">
                     <Badge className={getRoomTypeColor(room.type)}>
                       {getRoomTypeIcon(room.type)}
                       <span className="ml-1">{getRoomTypeLabel(room.type)}</span>
                     </Badge>
                     {editMode && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteDialog({ isOpen: true, room })}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleVisibility(room)}
+                          className={cn(
+                            "h-8 w-8 p-0",
+                            room.isVisible === false
+                              ? "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                              : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                          )}
+                        >
+                          {room.isVisible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteDialog({ isOpen: true, room })}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -35,6 +35,7 @@ export interface Room {
   type: 'drums' | 'guitar' | 'universal'
   capacity: number
   description?: string
+  isVisible?: boolean
 }
 
 export interface Product {
@@ -153,7 +154,8 @@ class Database {
         name TEXT NOT NULL,
         type TEXT NOT NULL,
         capacity INTEGER NOT NULL,
-        description TEXT
+        description TEXT,
+        isVisible INTEGER NOT NULL DEFAULT 1
       )
     `
 
@@ -243,10 +245,44 @@ class Database {
         })
       })
 
+      // Add migration for isVisible field
+      await this.migrateRoomsTable()
       console.log('✅ Tables ready')
     } catch (err) {
       console.error('❌ Error creating tables:', err)
       throw err
+    }
+  }
+
+  private async migrateRoomsTable() {
+    // Check if isVisible column exists
+    const columnExists = await new Promise<boolean>((resolve, reject) => {
+      this.db!.get("PRAGMA table_info(rooms)", (err, row: any) => {
+        if (err) reject(err)
+        else resolve(false) // Need to check all columns
+      })
+    })
+
+    // Add isVisible column if it doesn't exist
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.db!.run('ALTER TABLE rooms ADD COLUMN isVisible INTEGER NOT NULL DEFAULT 1', (err) => {
+          if (err) {
+            // Column probably already exists
+            if (err.message.includes('duplicate column')) {
+              console.log('🔄 isVisible column already exists')
+              resolve()
+            } else {
+              reject(err)
+            }
+          } else {
+            console.log('✅ Added isVisible column to rooms table')
+            resolve()
+          }
+        })
+      })
+    } catch (error) {
+      console.log('🔄 Room table migration skipped (probably already migrated)')
     }
   }
 
@@ -263,16 +299,16 @@ class Database {
     if (roomsCount === 0) {
       console.log('🏢 Initializing default rooms...')
       const rooms: Room[] = [
-        { id: 'drums1', name: 'Big studio #1', type: 'drums', capacity: 6, description: 'Big drum room' },
-        { id: 'drums2', name: 'Upper-medium #2', type: 'drums', capacity: 4, description: 'Upper medium drum room' },
-        { id: 'guitar1', name: 'Upper-small #3', type: 'guitar', capacity: 8, description: 'Upper small drum-guitar room' }
+        { id: 'drums1', name: 'Big studio #1', type: 'drums', capacity: 6, description: 'Big drum room', isVisible: true },
+        { id: 'drums2', name: 'Upper-medium #2', type: 'drums', capacity: 4, description: 'Upper medium drum room', isVisible: true },
+        { id: 'guitar1', name: 'Upper-small #3', type: 'guitar', capacity: 8, description: 'Upper small drum-guitar room', isVisible: true }
       ]
 
       for (const room of rooms) {
         await new Promise<void>((resolve, reject) => {
           this.db!.run(
-            'INSERT INTO rooms (id, name, type, capacity, description) VALUES (?, ?, ?, ?, ?)',
-            [room.id, room.name, room.type, room.capacity, room.description],
+            'INSERT INTO rooms (id, name, type, capacity, description, isVisible) VALUES (?, ?, ?, ?, ?, ?)',
+            [room.id, room.name, room.type, room.capacity, room.description, room.isVisible ? 1 : 0],
             (err) => {
               if (err) reject(err)
               else resolve()
@@ -467,8 +503,10 @@ class Database {
             const slotHour = parseInt(slot.split(':')[0])
             let hasAvailableRoom = false
 
-            // Get suitable rooms for this booking type
-            const suitableRooms = rooms.filter(room => this.isRoomSuitable(room, bookingType))
+            // Get suitable rooms for this booking type (only visible rooms)
+            const suitableRooms = rooms.filter(room => 
+              this.isRoomSuitable(room, bookingType) && room.isVisible !== false
+            )
             console.log(`🎯 Suitable rooms for ${bookingType} at ${slot}:`, suitableRooms.map(r => r.name))
 
             // If no suitable rooms for this booking type, skip this slot
@@ -1113,8 +1151,8 @@ class Database {
     await this.connect()
     
     const query = `
-      INSERT INTO rooms (id, name, type, capacity, description)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO rooms (id, name, type, capacity, description, isVisible)
+      VALUES (?, ?, ?, ?, ?, ?)
     `
     
     return new Promise((resolve, reject) => {
@@ -1123,13 +1161,32 @@ class Database {
         roomData.name,
         roomData.type,
         roomData.capacity,
-        roomData.description || null
+        roomData.description || null,
+        roomData.isVisible !== false ? 1 : 0
       ], function(err) {
         if (err) {
           console.error('❌ Error creating room:', err)
           reject(err)
         } else {
           console.log(`✅ Room ${roomData.id} created successfully`)
+          resolve()
+        }
+      })
+    })
+  }
+
+  async toggleRoomVisibility(roomId: string): Promise<void> {
+    await this.connect()
+    
+    const query = `UPDATE rooms SET isVisible = CASE WHEN isVisible = 1 THEN 0 ELSE 1 END WHERE id = ?`
+    
+    return new Promise((resolve, reject) => {
+      this.db!.run(query, [roomId], function(err) {
+        if (err) {
+          console.error('❌ Error toggling room visibility:', err)
+          reject(err)
+        } else {
+          console.log(`✅ Room ${roomId} visibility toggled`)
           resolve()
         }
       })
