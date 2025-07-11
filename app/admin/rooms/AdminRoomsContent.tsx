@@ -507,7 +507,9 @@ export default function AdminRoomsContent() {
               </PopoverContent>
             </Popover>
             <Badge variant="secondary">
-              {schedule.reduce((total, room) => total + room.bookings.length, 0)} bookings
+              {schedule.filter(roomSchedule => 
+                rooms.find(room => room.id === roomSchedule.roomId)?.isVisible
+              ).reduce((total, room) => total + room.bookings.length, 0)} bookings
             </Badge>
           </div>
         </CardContent>
@@ -638,7 +640,7 @@ export default function AdminRoomsContent() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {rooms.map((room) => {
+            {rooms.filter(room => room.isVisible).map((room) => {
               const roomSchedule = schedule.find(s => s.roomId === room.id)
               return (
                 <div key={room.id} className="border border-border bg-card rounded-lg p-4">
@@ -716,6 +718,13 @@ export default function AdminRoomsContent() {
           {rooms.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               Failed to load room information
+            </div>
+          )}
+          {rooms.length > 0 && rooms.filter(room => room.isVisible).length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <EyeOff className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium">All rooms are hidden</p>
+              <p className="text-sm">Use "Manage Rooms" to make rooms visible for booking</p>
             </div>
           )}
         </CardContent>
