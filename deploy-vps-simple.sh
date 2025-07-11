@@ -28,7 +28,7 @@ docker-compose -f docker-compose.simple.yml --env-file .env.production up -d --b
 
 # Проверяем статус
 echo "📊 Проверяем статус..."
-docker-compose -f docker-compose.simple.yml ps
+docker-compose -f docker-compose.simple.yml  --env-file .env.production ps
 
 echo ""
 echo "✅ Деплой завершен!"
@@ -37,7 +37,7 @@ echo "🌐 Сайт доступен по адресу: http://164.92.208.159:30
 echo "🔧 Админ панель: http://164.92.208.159:3000/admin/login"
 echo ""
 echo "📋 Полезные команды:"
-echo "   Логи:     docker-compose -f docker-compose.simple.yml logs -f"
-echo "   Рестарт:  docker-compose -f docker-compose.simple.yml restart"
-echo "   Стоп:     docker-compose -f docker-compose.simple.yml down"
+echo "   Логи:     docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f"
+echo "   Рестарт:  docker-compose -f docker-compose.prod.yml --env-file .env.production restart"
+echo "   Стоп:     docker-compose -f docker-compose.prod.yml --env-file .env.production down"
 echo ""
