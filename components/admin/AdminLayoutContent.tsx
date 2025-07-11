@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from './ThemeToggle'
-import { LanguageSwitcher } from './LanguageSwitcher'
+import LanguageSwitcher from './LanguageSwitcher'
 import { 
   LayoutDashboard, 
   Calendar, 
