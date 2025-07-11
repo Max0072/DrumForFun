@@ -35,7 +35,7 @@ export interface Room {
   type: 'drums' | 'guitar' | 'universal'
   capacity: number
   description?: string
-  isVisible?: boolean
+  isVisible: boolean
 }
 
 export interface Product {
@@ -452,7 +452,12 @@ class Database {
           console.error('❌ Error fetching rooms:', err)
           reject(err)
         } else {
-          resolve(rows || [])
+          // Convert SQLite INTEGER to JavaScript boolean
+          const rooms = (rows || []).map(row => ({
+            ...row,
+            isVisible: Boolean(row.isVisible)
+          }))
+          resolve(rooms)
         }
       })
     })
@@ -505,7 +510,7 @@ class Database {
 
             // Get suitable rooms for this booking type (only visible rooms)
             const suitableRooms = rooms.filter(room => 
-              this.isRoomSuitable(room, bookingType) && room.isVisible !== false
+              this.isRoomSuitable(room, bookingType) && room.isVisible === true
             )
             console.log(`🎯 Suitable rooms for ${bookingType} at ${slot}:`, suitableRooms.map(r => r.name))
 
@@ -679,8 +684,8 @@ class Database {
         }
 
         for (const room of rooms) {
-          // Check if room is suitable for booking type
-          if (!this.isRoomSuitable(room, bookingType)) continue
+          // Check if room is suitable for booking type and visible
+          if (!this.isRoomSuitable(room, bookingType) || room.isVisible !== true) continue
 
           // Check if room is not occupied
           const isOccupied = bookings.some(booking => {

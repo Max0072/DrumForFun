@@ -38,7 +38,7 @@ interface Room {
   type: 'drums' | 'guitar' | 'universal'
   capacity: number
   description?: string
-  isVisible?: boolean
+  isVisible: boolean
 }
 
 interface RoomSchedule {
@@ -381,7 +381,7 @@ export default function AdminRoomsContent() {
       if (response.ok) {
         toast({
           title: 'Success',
-          description: `Room ${room.isVisible ? 'hidden' : 'visible'} successfully`,
+          description: `Room ${room.isVisible ? 'hidden' : 'made visible'} successfully`,
         })
         fetchRooms()
         fetchSchedule(selectedDate)
@@ -551,16 +551,16 @@ export default function AdminRoomsContent() {
           {rooms.map((room) => (
             <Card key={room.id} className={cn(
               "transition-all duration-200",
-              room.isVisible === false && "opacity-60 border-dashed"
+              !room.isVisible && "opacity-60 border-dashed"
             )}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className={cn(
                     "text-lg flex items-center gap-2",
-                    room.isVisible === false && "text-gray-500"
+                    !room.isVisible && "text-gray-500"
                   )}>
                     {room.name}
-                    {room.isVisible === false && (
+                    {!room.isVisible && (
                       <EyeOff className="h-4 w-4 text-gray-400" />
                     )}
                   </CardTitle>
@@ -577,12 +577,12 @@ export default function AdminRoomsContent() {
                           onClick={() => handleToggleVisibility(room)}
                           className={cn(
                             "h-8 w-8 p-0",
-                            room.isVisible === false
+                            !room.isVisible
                               ? "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                               : "text-green-500 hover:text-green-700 hover:bg-green-50"
                           )}
                         >
-                          {room.isVisible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {!room.isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                         <Button
                           variant="ghost"
