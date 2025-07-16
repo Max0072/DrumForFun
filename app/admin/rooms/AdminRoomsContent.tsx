@@ -170,6 +170,7 @@ export default function AdminRoomsContent() {
       case 'confirmed': return 'bg-green-100 text-green-800'
       case 'pending': return 'bg-yellow-100 text-yellow-800'
       case 'rejected': return 'bg-red-100 text-red-800'
+      case 'completed': return 'bg-blue-100 text-blue-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -179,6 +180,7 @@ export default function AdminRoomsContent() {
       case 'confirmed': return 'Confirmed'
       case 'pending': return 'Pending'
       case 'rejected': return 'Rejected'
+      case 'completed': return 'Completed'
       default: return status
     }
   }
@@ -219,6 +221,19 @@ export default function AdminRoomsContent() {
       toast({
         title: 'Error',
         description: "Description is required",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Check if selected date/time is in the past
+    const selectedDateTime = new Date(`${format(slotDialog.date, 'yyyy-MM-dd')}T${slotDialog.timeSlot}:00`)
+    const now = new Date()
+    
+    if (selectedDateTime < now) {
+      toast({
+        title: 'Error',
+        description: "Cannot create bookings for past dates/times",
         variant: "destructive",
       })
       return
@@ -674,9 +689,15 @@ export default function AdminRoomsContent() {
                           className={cn(
                             "p-2 rounded border text-center text-xs cursor-pointer transition-colors hover:shadow-sm",
                             booking ? (
-                              isStartTime 
-                                ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50" 
-                                : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                              booking.status === 'completed' ? (
+                                isStartTime 
+                                  ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 opacity-75" 
+                                  : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 opacity-75"
+                              ) : (
+                                isStartTime 
+                                  ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50" 
+                                  : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                              )
                             ) : "bg-muted border-border hover:bg-accent/50"
                           )}
                         >
@@ -685,9 +706,27 @@ export default function AdminRoomsContent() {
                             <div className="mt-1">
                               {isStartTime ? (
                                 <>
-                                  <div className="font-medium text-blue-800 dark:text-blue-200">{booking.name}</div>
-                                  <div className="text-blue-600 dark:text-blue-300">{booking.type}</div>
-                                  <div className="text-xs text-blue-500 dark:text-blue-400">
+                                  <div className={cn(
+                                    "font-medium",
+                                    booking.status === 'completed' 
+                                      ? "text-blue-600 dark:text-blue-400 opacity-75" 
+                                      : "text-blue-800 dark:text-blue-200"
+                                  )}>
+                                    {booking.name}
+                                  </div>
+                                  <div className={cn(
+                                    booking.status === 'completed' 
+                                      ? "text-blue-500 dark:text-blue-400 opacity-75" 
+                                      : "text-blue-600 dark:text-blue-300"
+                                  )}>
+                                    {booking.type}
+                                  </div>
+                                  <div className={cn(
+                                    "text-xs",
+                                    booking.status === 'completed' 
+                                      ? "text-blue-400 dark:text-blue-500 opacity-75" 
+                                      : "text-blue-500 dark:text-blue-400"
+                                  )}>
                                     {booking.time} - {parseInt(booking.time.split(':')[0]) + parseInt(booking.duration)}:00
                                   </div>
                                   <Badge className={cn("mt-1", getStatusColor(booking.status))} variant="secondary">
@@ -695,7 +734,12 @@ export default function AdminRoomsContent() {
                                   </Badge>
                                 </>
                               ) : (
-                                <div className="text-blue-600 dark:text-blue-300 font-medium text-xs">
+                                <div className={cn(
+                                  "font-medium text-xs",
+                                  booking.status === 'completed' 
+                                    ? "text-blue-500 dark:text-blue-400 opacity-75" 
+                                    : "text-blue-600 dark:text-blue-300"
+                                )}>
                                   ← {booking.name}
                                   <div className="text-xs opacity-75">continues</div>
                                 </div>

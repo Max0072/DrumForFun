@@ -22,6 +22,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Validate that booking is not for past date/time
+    const bookingDateTime = new Date(`${date}T${time}:00`)
+    const now = new Date()
+    
+    if (bookingDateTime < now) {
+      return NextResponse.json(
+        { error: 'Cannot create bookings for past dates/times' },
+        { status: 400 }
+      )
+    }
+
     const bookingId = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     const bookingData = {

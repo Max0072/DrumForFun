@@ -39,7 +39,7 @@ interface Booking {
   duration: string
   notes?: string
   type: string
-  status: 'pending' | 'confirmed' | 'rejected'
+  status: 'pending' | 'confirmed' | 'rejected' | 'completed'
   createdAt: string
   updatedAt?: string
   adminMessage?: string
@@ -85,7 +85,7 @@ export default function AdminHistoryContent() {
         setBookings(sortedBookings)
       }
     } catch (error) {
-      console.error(t.history.loadError, error)
+      console.error('Error loading bookings:', error)
     } finally {
       setLoading(false)
     }
@@ -94,14 +94,17 @@ export default function AdminHistoryContent() {
   const filterBookings = () => {
     let filtered = bookings
 
+    // Only show non-pending bookings (confirmed, rejected, completed)
+    filtered = filtered.filter(booking => booking.status !== 'pending')
+
     // Text search
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(booking => 
         booking.name.toLowerCase().includes(term) ||
         booking.email.toLowerCase().includes(term) ||
-        booking.id.toLowerCase().includes(term) ||
-        booking.phone.includes(term)
+        booking.phone.toLowerCase().includes(term) ||
+        booking.id.toLowerCase().includes(term)
       )
     }
 
@@ -115,76 +118,16 @@ export default function AdminHistoryContent() {
       filtered = filtered.filter(booking => booking.type === typeFilter)
     }
 
-    // Date filter
-    if (dateFrom) {
-      filtered = filtered.filter(booking => 
-        new Date(booking.createdAt) >= dateFrom
-      )
-    }
-
-    if (dateTo) {
-      const endDate = new Date(dateTo)
-      endDate.setHours(23, 59, 59, 999) // End of day
-      filtered = filtered.filter(booking => 
-        new Date(booking.createdAt) <= endDate
-      )
+    // Date range filter
+    if (dateFrom && dateTo) {
+      filtered = filtered.filter(booking => {
+        const bookingDate = new Date(booking.date)
+        return bookingDate >= dateFrom && bookingDate <= dateTo
+      })
     }
 
     setFilteredBookings(filtered)
-    setCurrentPage(1) // Reset to first page when filtering
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return <AlertCircle className="h-4 w-4" />
-      case 'confirmed': return <CheckCircle className="h-4 w-4" />
-      case 'rejected': return <XCircle className="h-4 w-4" />
-      default: return <Clock className="h-4 w-4" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200'
-      case 'confirmed': return 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-      case 'rejected': return 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-      default: return 'bg-muted text-muted-foreground'
-    }
-  }
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending': return t.bookings.pending
-      case 'confirmed': return t.bookings.confirmed
-      case 'rejected': return t.bookings.rejected
-      default: return status
-    }
-  }
-
-  const exportToCSV = () => {
-    const headers = ['ID', t.history.customer, 'Email', 'Phone', t.history.date, 'Time', t.history.type, t.history.status, 'Room', 'Created']
-    const data = filteredBookings.map(booking => [
-      booking.id,
-      booking.name,
-      booking.email,
-      booking.phone,
-      booking.date,
-      booking.time,
-      booking.type,
-      getStatusLabel(booking.status),
-      booking.roomName || '-',
-      format(new Date(booking.createdAt), 'dd.MM.yyyy HH:mm')
-    ])
-
-    const csvContent = [headers, ...data]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `bookings_history_${format(new Date(), 'yyyy-MM-dd')}.csv`
-    link.click()
+    setCurrentPage(1)
   }
 
   const clearFilters = () => {
@@ -195,12 +138,73 @@ export default function AdminHistoryContent() {
     setDateTo(new Date())
   }
 
+  const exportToCSV = () => {
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Date', 'Time', 'Duration', 'Type', 'Status', 'Room', 'Notes', 'Admin Message', 'Created At']
+    const csvData = filteredBookings.map(booking => [
+      booking.id,
+      booking.name,
+      booking.email,
+      booking.phone,
+      booking.date,
+      booking.time,
+      booking.duration,
+      booking.type,
+      booking.status,
+      booking.roomName || '',
+      booking.notes || '',
+      booking.adminMessage || '',
+      booking.createdAt
+    ])
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `booking-history-${format(new Date(), 'yyyy-MM-dd')}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+      case 'rejected': return 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
+      case 'completed': return 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+      default: return 'bg-gray-100 dark:bg-gray-900/20 text-gray-800 dark:text-gray-200'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'confirmed': return <CheckCircle className="h-4 w-4" />
+      case 'rejected': return <XCircle className="h-4 w-4" />
+      case 'completed': return <CheckCircle className="h-4 w-4" />
+      default: return <AlertCircle className="h-4 w-4" />
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'Confirmed'
+      case 'rejected': return 'Rejected'
+      case 'completed': return 'Completed'
+      default: return status
+    }
+  }
+
   // Pagination
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage)
+  const endIndex = startIndex + itemsPerPage
+  const currentBookings = filteredBookings.slice(startIndex, endIndex)
 
-  const uniqueTypes = [...new Set(bookings.map(b => b.type))]
+  const bookingTypes = [...new Set(bookings.map(booking => booking.type))].filter(Boolean)
 
   if (loading) {
     return (
@@ -219,14 +223,18 @@ export default function AdminHistoryContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t.history.title}</h1>
+          <h1 className="text-2xl font-bold text-foreground">Booking History</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t.history.description}
+            View and manage completed, confirmed, and rejected bookings
           </p>
         </div>
-        <Button onClick={exportToCSV} variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          {t.history.exportData}
+        <Button 
+          onClick={exportToCSV}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
         </Button>
       </div>
 
@@ -235,18 +243,18 @@ export default function AdminHistoryContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            {t.history.searchAndFilters}
+            Filters & Search
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="space-y-2">
-              <Label>{t.history.searchLabel}</Label>
+              <Label>Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder={t.history.searchPlaceholder}
+                  placeholder="Search by name, email, phone, or ID"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -254,33 +262,35 @@ export default function AdminHistoryContent() {
               </div>
             </div>
 
-            {/* Status */}
+            {/* Status Filter */}
             <div className="space-y-2">
-              <Label>{t.history.statusLabel}</Label>
+              <Label>Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t.history.allStatuses}</SelectItem>
-                  <SelectItem value="pending">{t.bookings.pending}</SelectItem>
-                  <SelectItem value="confirmed">{t.bookings.confirmed}</SelectItem>
-                  <SelectItem value="rejected">{t.bookings.rejected}</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Type */}
+            {/* Type Filter */}
             <div className="space-y-2">
-              <Label>{t.history.typeLabel}</Label>
+              <Label>Type</Label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t.history.allTypes}</SelectItem>
-                  {uniqueTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {bookingTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -288,22 +298,16 @@ export default function AdminHistoryContent() {
 
             {/* Date Range */}
             <div className="space-y-2">
-              <Label>{t.history.dateRange}</Label>
-              <div className="flex gap-2">
+              <Label>Date Range</Label>
+              <div className="flex gap-1">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal flex-1",
-                        !dateFrom && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd.MM") : t.history.from}
+                      {dateFrom ? format(dateFrom, "MMM d") : "From"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={dateFrom}
@@ -312,21 +316,14 @@ export default function AdminHistoryContent() {
                     />
                   </PopoverContent>
                 </Popover>
-
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal flex-1",
-                        !dateTo && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateTo ? format(dateTo, "dd.MM") : t.history.to}
+                      {dateTo ? format(dateTo, "MMM d") : "To"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={dateTo}
@@ -339,31 +336,37 @@ export default function AdminHistoryContent() {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{t.history.recordsFound}: {filteredBookings.length}</span>
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              Showing {currentBookings.length} of {filteredBookings.length} bookings
+            </div>
             <Button 
-              variant="outline" 
-              size="sm"
               onClick={clearFilters}
+              variant="ghost"
+              size="sm"
+              className="text-sm"
             >
-              {t.history.clearFilters}
+              Clear Filters
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Records List */}
+      {/* Bookings List */}
       <div className="space-y-4">
-        {paginatedBookings.length === 0 ? (
+        {currentBookings.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
-              <History className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">{t.history.noRecordsFound}</p>
+              <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium text-foreground">No bookings found</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Try adjusting your filters or search terms
+              </p>
             </CardContent>
           </Card>
         ) : (
-          paginatedBookings.map((booking) => (
-            <Card key={booking.id}>
+          currentBookings.map((booking) => (
+            <Card key={booking.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex-1 space-y-3">
@@ -376,7 +379,7 @@ export default function AdminHistoryContent() {
                       <span className="text-sm text-muted-foreground">#{booking.id}</span>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span className="text-foreground">{booking.email}</span>
@@ -386,12 +389,8 @@ export default function AdminHistoryContent() {
                         <span className="text-foreground">{booking.phone}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{booking.date} {t.dashboard.at} {booking.time}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{booking.duration}h</span>
+                        <span className="text-foreground">{booking.date} at {booking.time}</span>
                       </div>
                     </div>
                     
@@ -400,32 +399,38 @@ export default function AdminHistoryContent() {
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="text-foreground">{booking.type}</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-foreground">{booking.duration}h</span>
+                      </div>
                       {booking.roomName && (
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-foreground">{t.bookings.room} {booking.roomName}</span>
+                          <span className="text-foreground">{booking.roomName}</span>
                         </div>
                       )}
                     </div>
                     
                     {booking.notes && (
-                      <div className="text-sm text-foreground">
-                        <strong>{t.bookings.notes}</strong> {booking.notes}
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Notes:</strong> {booking.notes}
                       </div>
                     )}
                     
                     {booking.adminMessage && (
                       <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded p-3 text-sm">
-                        <strong className="text-foreground">{t.bookings.adminMessage}</strong> <span className="text-foreground">{booking.adminMessage}</span>
+                        <strong className="text-foreground">Admin Message:</strong> {booking.adminMessage}
                       </div>
                     )}
                   </div>
                   
-                  <div className="text-right text-sm text-muted-foreground">
-                    <div>{t.bookings.createdDate} {format(new Date(booking.createdAt), 'dd.MM.yyyy HH:mm')}</div>
-                    {booking.updatedAt && (
-                      <div>Updated: {format(new Date(booking.updatedAt), 'dd.MM.yyyy HH:mm')}</div>
-                    )}
+                  <div className="lg:w-auto">
+                    <div className="text-right text-sm text-muted-foreground">
+                      <div>Created: {format(new Date(booking.createdAt), 'MMM d, yyyy')}</div>
+                      {booking.updatedAt && (
+                        <div>Updated: {format(new Date(booking.updatedAt), 'MMM d, yyyy')}</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -436,34 +441,39 @@ export default function AdminHistoryContent() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredBookings.length)} of {filteredBookings.length}
-            </div>
-            <div className="flex gap-2">
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {[...Array(totalPages)].map((_, i) => (
               <Button
-                variant="outline"
+                key={i}
+                variant={currentPage === i + 1 ? "default" : "outline"}
                 size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(i + 1)}
+                className="w-8 h-8"
               >
-                Previous
+                {i + 1}
               </Button>
-              <span className="px-3 py-2 text-sm">
-                {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
       )}
     </div>
   )

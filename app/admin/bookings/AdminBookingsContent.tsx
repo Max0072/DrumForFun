@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
@@ -23,8 +22,6 @@ import {
   Mail,
   Music,
   MessageSquare,
-  Filter,
-  Search,
   Trash2
 } from "lucide-react"
 
@@ -48,9 +45,6 @@ export default function AdminBookingsContent() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedStatus, setSelectedStatus] = useState<string>('all')
-  const [selectedType, setSelectedType] = useState<string>('all')
-  const [searchTerm, setSearchTerm] = useState('')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [actionDialog, setActionDialog] = useState<{open: boolean, action: 'confirm' | 'reject' | 'cancel' | 'delete' | null}>({open: false, action: null})
   const [adminMessage, setAdminMessage] = useState('')
@@ -72,7 +66,7 @@ export default function AdminBookingsContent() {
 
   useEffect(() => {
     filterBookings()
-  }, [bookings, selectedStatus, selectedType, searchTerm])
+  }, [bookings])
 
   const updatePastBookings = async () => {
     try {
@@ -129,25 +123,8 @@ export default function AdminBookingsContent() {
   }
 
   const filterBookings = () => {
-    let filtered = bookings
-
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(booking => booking.status === selectedStatus)
-    }
-
-    if (selectedType !== 'all') {
-      filtered = filtered.filter(booking => booking.type === selectedType)
-    }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(booking => 
-        booking.name.toLowerCase().includes(term) ||
-        booking.email.toLowerCase().includes(term) ||
-        booking.id.toLowerCase().includes(term)
-      )
-    }
-
+    // Only show pending bookings
+    const filtered = bookings.filter(booking => booking.status === 'pending')
     setFilteredBookings(filtered)
   }
 
@@ -288,7 +265,6 @@ export default function AdminBookingsContent() {
     }
   }
 
-  const bookingTypes = [...new Set(bookings.map(booking => booking.type))].filter(Boolean)
 
   if (loading) {
     return (
@@ -306,78 +282,18 @@ export default function AdminBookingsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">{t.bookings.title}</h1>
+        <h1 className="text-2xl font-bold text-foreground">Pending Bookings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t.bookings.description}
+          Manage pending bookings that need your attention ({filteredBookings.length})
         </p>
       </div>
-
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            {t.bookings.searchAndFilters}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>{t.bookings.searchLabel}</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder={t.bookings.searchPlaceholder}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>{t.bookings.statusLabel}</Label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.bookings.allStatuses}</SelectItem>
-                  <SelectItem value="pending">{t.bookings.pending}</SelectItem>
-                  <SelectItem value="confirmed">{t.bookings.confirmed}</SelectItem>
-                  <SelectItem value="rejected">{t.bookings.rejected}</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>{t.bookings.typeLabel}</Label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.bookings.allTypes}</SelectItem>
-                  {bookingTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="mt-4 text-sm text-muted-foreground">
-            {t.bookings.bookingsFound}: {filteredBookings.length}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Bookings List */}
       <div className="space-y-4">
         {filteredBookings.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">{t.bookings.noBookingsFound}</p>
+              <p className="text-muted-foreground">No pending bookings found</p>
             </CardContent>
           </Card>
         ) : (
