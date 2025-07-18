@@ -92,7 +92,8 @@ export default function AdminHistoryContent() {
   }
 
   const filterBookings = () => {
-    let filtered = bookings
+    // Only show non-pending bookings (confirmed, rejected, completed)
+    let filtered = bookings.filter(booking => booking.status !== 'pending')
 
     // Text search
     if (searchTerm) {
@@ -115,10 +116,10 @@ export default function AdminHistoryContent() {
       filtered = filtered.filter(booking => booking.type === typeFilter)
     }
 
-    // Date filter
+    // Date filter by booking date (not creation date)
     if (dateFrom) {
       filtered = filtered.filter(booking => 
-        new Date(booking.createdAt) >= dateFrom
+        new Date(booking.date) >= dateFrom
       )
     }
 
@@ -126,9 +127,16 @@ export default function AdminHistoryContent() {
       const endDate = new Date(dateTo)
       endDate.setHours(23, 59, 59, 999) // End of day
       filtered = filtered.filter(booking => 
-        new Date(booking.createdAt) <= endDate
+        new Date(booking.date) <= endDate
       )
     }
+
+    // Sort by booking date (newest first)
+    filtered.sort((a, b) => {
+      const aDateTime = new Date(`${a.date}T${a.time}:00`)
+      const bDateTime = new Date(`${b.date}T${b.time}:00`)
+      return bDateTime.getTime() - aDateTime.getTime()
+    })
 
     setFilteredBookings(filtered)
     setCurrentPage(1) // Reset to first page when filtering
@@ -219,14 +227,14 @@ export default function AdminHistoryContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t.history.title}</h1>
+          <h1 className="text-2xl font-bold text-foreground">Booking History</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t.history.description}
+            View completed, confirmed, and rejected bookings
           </p>
         </div>
         <Button onClick={exportToCSV} variant="outline">
           <Download className="mr-2 h-4 w-4" />
-          {t.history.exportData}
+          Export CSV
         </Button>
       </div>
 
@@ -235,18 +243,18 @@ export default function AdminHistoryContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            {t.history.searchAndFilters}
+            Search & Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="space-y-2">
-              <Label>{t.history.searchLabel}</Label>
+              <Label>Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t.history.searchPlaceholder}
+                  placeholder="Search by name, email, phone, or ID"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -256,97 +264,45 @@ export default function AdminHistoryContent() {
 
             {/* Status */}
             <div className="space-y-2">
-              <Label>{t.history.statusLabel}</Label>
+              <Label>Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t.history.allStatuses}</SelectItem>
-                  <SelectItem value="pending">{t.bookings.pending}</SelectItem>
-                  <SelectItem value="confirmed">{t.bookings.confirmed}</SelectItem>
-                  <SelectItem value="rejected">{t.bookings.rejected}</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Type */}
             <div className="space-y-2">
-              <Label>{t.history.typeLabel}</Label>
+              <Label>Lesson Type</Label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t.history.allTypes}</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   {uniqueTypes.map(type => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Date Range */}
-            <div className="space-y-2">
-              <Label>{t.history.dateRange}</Label>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal flex-1",
-                        !dateFrom && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd.MM") : t.history.from}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateFrom}
-                      onSelect={setDateFrom}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal flex-1",
-                        !dateTo && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateTo ? format(dateTo, "dd.MM") : t.history.to}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateTo}
-                      onSelect={setDateTo}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
           </div>
 
           <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{t.history.recordsFound}: {filteredBookings.length}</span>
+            <span>Found: {filteredBookings.length} bookings</span>
             <Button 
               variant="outline" 
               size="sm"
               onClick={clearFilters}
             >
-              {t.history.clearFilters}
+              Clear Filters
             </Button>
           </div>
         </CardContent>
@@ -358,7 +314,8 @@ export default function AdminHistoryContent() {
           <Card>
             <CardContent className="text-center py-8">
               <History className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">{t.history.noRecordsFound}</p>
+              <p className="text-muted-foreground">No bookings found</p>
+              <p className="text-sm text-muted-foreground mt-2">Try adjusting your search or filters</p>
             </CardContent>
           </Card>
         ) : (
@@ -387,7 +344,7 @@ export default function AdminHistoryContent() {
                       </div>
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{booking.date} {t.dashboard.at} {booking.time}</span>
+                        <span className="text-foreground">{booking.date} at {booking.time}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
@@ -403,26 +360,26 @@ export default function AdminHistoryContent() {
                       {booking.roomName && (
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-foreground">{t.bookings.room} {booking.roomName}</span>
+                          <span className="text-foreground">Room: {booking.roomName}</span>
                         </div>
                       )}
                     </div>
                     
                     {booking.notes && (
                       <div className="text-sm text-foreground">
-                        <strong>{t.bookings.notes}</strong> {booking.notes}
+                        <strong>Notes:</strong> {booking.notes}
                       </div>
                     )}
                     
                     {booking.adminMessage && (
                       <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded p-3 text-sm">
-                        <strong className="text-foreground">{t.bookings.adminMessage}</strong> <span className="text-foreground">{booking.adminMessage}</span>
+                        <strong className="text-foreground">Admin Message:</strong> <span className="text-foreground">{booking.adminMessage}</span>
                       </div>
                     )}
                   </div>
                   
                   <div className="text-right text-sm text-muted-foreground">
-                    <div>{t.bookings.createdDate} {format(new Date(booking.createdAt), 'dd.MM.yyyy HH:mm')}</div>
+                    <div>Created: {format(new Date(booking.createdAt), 'dd.MM.yyyy HH:mm')}</div>
                     {booking.updatedAt && (
                       <div>Updated: {format(new Date(booking.updatedAt), 'dd.MM.yyyy HH:mm')}</div>
                     )}

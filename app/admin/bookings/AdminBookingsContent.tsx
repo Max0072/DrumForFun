@@ -129,7 +129,10 @@ export default function AdminBookingsContent() {
   }
 
   const filterBookings = () => {
-    let filtered = bookings
+    // Only show pending and confirmed bookings
+    let filtered = bookings.filter(booking => 
+      booking.status === 'pending' || booking.status === 'confirmed'
+    )
 
     if (selectedStatus !== 'all') {
       filtered = filtered.filter(booking => booking.status === selectedStatus)
@@ -147,6 +150,19 @@ export default function AdminBookingsContent() {
         booking.id.toLowerCase().includes(term)
       )
     }
+
+    // Sort bookings: pending first, then confirmed
+    // Within each status group, sort by booking date/time (earliest first - most urgent)
+    filtered.sort((a, b) => {
+      // First, sort by status priority (pending before confirmed)
+      if (a.status === 'pending' && b.status === 'confirmed') return -1
+      if (a.status === 'confirmed' && b.status === 'pending') return 1
+      
+      // Within same status, sort by booking date/time (chronological - earliest first)
+      const aDateTime = new Date(`${a.date}T${a.time}:00`)
+      const bDateTime = new Date(`${b.date}T${b.time}:00`)
+      return aDateTime.getTime() - bDateTime.getTime()
+    })
 
     setFilteredBookings(filtered)
   }
@@ -306,9 +322,9 @@ export default function AdminBookingsContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">{t.bookings.title}</h1>
+        <h1 className="text-2xl font-bold text-foreground">Active Bookings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t.bookings.description}
+          Manage pending and confirmed bookings
         </p>
       </div>
 
@@ -341,11 +357,9 @@ export default function AdminBookingsContent() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t.bookings.allStatuses}</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">{t.bookings.pending}</SelectItem>
                   <SelectItem value="confirmed">{t.bookings.confirmed}</SelectItem>
-                  <SelectItem value="rejected">{t.bookings.rejected}</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -426,7 +440,7 @@ export default function AdminBookingsContent() {
                       )}
                     </div>
                     
-                    {booking.notes && (
+                    {booking.notes && booking.type !== 'Admin Block' && (
                       <div className="flex items-start gap-2 text-sm">
                         <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
                         <span className="text-foreground">{t.bookings.notes} {booking.notes}</span>

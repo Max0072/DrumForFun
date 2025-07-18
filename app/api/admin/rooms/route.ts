@@ -73,7 +73,8 @@ export async function POST(request: Request) {
       name,
       type,
       capacity: parseInt(capacity),
-      description
+      description,
+      isVisible: true
     })
 
     return NextResponse.json({ 

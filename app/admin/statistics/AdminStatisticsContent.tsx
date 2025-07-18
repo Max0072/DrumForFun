@@ -18,7 +18,9 @@ import {
   Star,
   Activity,
   PieChart,
-  DollarSign
+  DollarSign,
+  XCircle,
+  CheckCircle
 } from "lucide-react"
 import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay } from "date-fns"
 
@@ -118,24 +120,16 @@ export default function AdminStatisticsContent() {
   }
 
   const getDayName = (day: string) => {
-    const dayNames: { [key: string]: string } = {
-      'Monday': 'Понедельник',
-      'Tuesday': 'Вторник', 
-      'Wednesday': 'Среда',
-      'Thursday': 'Четверг',
-      'Friday': 'Пятница',
-      'Saturday': 'Суббота',
-      'Sunday': 'Воскресенье'
-    }
-    return dayNames[day] || day
+    // Return day names in English
+    return day
   }
 
   const getPeriodLabel = (period: string) => {
     switch (period) {
-      case 'week': return 'Последняя неделя'
-      case 'month': return 'Последний месяц'
-      case 'quarter': return 'Последние 3 месяца'
-      case 'year': return 'Последний год'
+      case 'week': return 'Last Week'
+      case 'month': return 'Last Month'
+      case 'quarter': return 'Last 3 Months'
+      case 'year': return 'Last Year'
       default: return period
     }
   }
@@ -144,8 +138,8 @@ export default function AdminStatisticsContent() {
     return (
       <div className="animate-pulse">
         <div className="h-8 bg-muted rounded w-64 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+          {[...Array(6)].map((_, i) => (
             <div key={i} className="h-32 bg-muted rounded-lg"></div>
           ))}
         </div>
@@ -189,7 +183,7 @@ export default function AdminStatisticsContent() {
       </div>
 
       {/* Overview Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t.statistics.totalBookings}</CardTitle>
@@ -231,7 +225,33 @@ export default function AdminStatisticsContent() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t.statistics.growth}</CardTitle>
+            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{statistics.rejectedBookings}</div>
+            <p className="text-xs text-muted-foreground">
+              {statistics.totalBookings > 0 ? ((statistics.rejectedBookings / statistics.totalBookings) * 100).toFixed(1) : 0}% of total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{statistics.totalBookings - statistics.pendingBookings - statistics.confirmedBookings - statistics.rejectedBookings}</div>
+            <p className="text-xs text-muted-foreground">
+              Completed sessions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Growth</CardTitle>
             {getGrowthIcon(statistics.recentTrends.weeklyGrowth)}
           </CardHeader>
           <CardContent>
@@ -239,7 +259,7 @@ export default function AdminStatisticsContent() {
               {statistics.recentTrends.weeklyGrowth > 0 ? '+' : ''}{statistics.recentTrends.weeklyGrowth.toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              {t.statistics.lastMonth}
+              Weekly trend
             </p>
           </CardContent>
         </Card>
@@ -351,16 +371,17 @@ export default function AdminStatisticsContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {Object.entries(statistics.bookingsByDay).map(([day, count]) => {
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+                const count = statistics.bookingsByDay[day] || 0
                 const maxCount = Math.max(...Object.values(statistics.bookingsByDay))
                 return (
                   <div key={day} className="flex items-center justify-between">
                     <span className="font-medium w-24 text-foreground">{getDayName(day)}</span>
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-4 flex-1 ml-4">
                       <div className="flex-1 bg-muted rounded-full h-2">
                         <div
                           className="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${(count / maxCount) * 100}%` }}
+                          style={{ width: `${maxCount > 0 ? (count / maxCount) * 100 : 0}%` }}
                         ></div>
                       </div>
                       <span className="font-semibold w-8 text-right text-foreground">{count}</span>
@@ -373,30 +394,6 @@ export default function AdminStatisticsContent() {
         </Card>
       </div>
 
-      {/* Status Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            {t.statistics.overview}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(statistics.bookingsByStatus).map(([status, count]) => (
-              <div key={status} className="text-center p-4 border rounded-lg">
-                <Badge className={getStatusColor(status)}>
-                  {getStatusLabel(status)}
-                </Badge>
-                <div className="text-2xl font-bold mt-2 text-foreground">{count}</div>
-                <div className="text-sm text-muted-foreground">
-                  {((count / statistics.totalBookings) * 100).toFixed(1)}%
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
