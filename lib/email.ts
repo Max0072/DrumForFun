@@ -1,5 +1,5 @@
 // lib/email.ts
-import nodemailer from 'nodemailer'
+import sgMail from '@sendgrid/mail'
 
 interface EmailOptions {
   to: string
@@ -8,65 +8,42 @@ interface EmailOptions {
   text?: string
 }
 
-// Создаем транспортер для отправки email
-const createTransporter = () => {
-  // Для разработки используем Ethereal Email (фейковый SMTP)
-  // В production замените на настоящий SMTP сервис
-  if (process.env.NODE_ENV === 'development') {
-    // Для development - используем Gmail или другой сервис
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER, // ваш email
-        pass: process.env.EMAIL_APP_PASSWORD, // пароль приложения
-      },
-    })
-  }
-
-  // Production конфигурация
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
+// Initialize SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+} else {
+  console.warn('⚠️ SENDGRID_API_KEY not found in environment variables')
 }
 
 export async function sendEmail({ to, subject, html, text }: EmailOptions) {
   try {
-    // Отладочная информация для email
-    console.log('📧 Email debug:')
-    console.log('EMAIL_USER:', process.env.EMAIL_USER)
-    console.log('EMAIL_APP_PASSWORD exists:', !!process.env.EMAIL_APP_PASSWORD)
-    console.log('EMAIL_APP_PASSWORD length:', process.env.EMAIL_APP_PASSWORD?.length)
-    
-    // Если EMAIL_USER не настроен, просто логируем без отправки
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD || 
-        process.env.EMAIL_USER === 'your-email@gmail.com') {
+    // Если SENDGRID_API_KEY не настроен, просто логируем без отправки
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your-sendgrid-api-key') {
       console.log('📧 Email (demo mode):', { to, subject })
       console.log('📧 Content:', html.substring(0, 200) + '...')
       return { success: true, messageId: 'demo-' + Date.now() }
     }
 
-    const transporter = createTransporter()
-    
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || 'noreply@drumschool.com',
+    const msg = {
       to,
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@drumschool.com',
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, ''), // простое удаление HTML тегов для text версии
     }
 
-    const info = await transporter.sendMail(mailOptions)
-    console.log('📧 Email sent:', info.messageId)
-    return { success: true, messageId: info.messageId }
-  } catch (error) {
-    console.error('❌ Email send error:', error)
-    // @ts-ignore
+    const response = await sgMail.send(msg)
+    console.log('📧 Email sent via SendGrid:', response[0].statusCode)
+    return { success: true, messageId: response[0].headers['x-message-id'] || 'sendgrid-' + Date.now() }
+  } catch (error: any) {
+    console.error('❌ SendGrid email error:', error)
+    
+    // SendGrid specific error handling
+    if (error.response) {
+      console.error('SendGrid error body:', error.response.body)
+      return { success: false, error: error.response.body.errors?.[0]?.message || error.message }
+    }
+    
     return { success: false, error: error.message }
   }
 }
