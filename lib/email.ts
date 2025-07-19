@@ -1,5 +1,5 @@
 // lib/email.ts
-import sgMail from '@sendgrid/mail'
+import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend'
 
 interface EmailOptions {
   to: string
@@ -8,40 +8,55 @@ interface EmailOptions {
   text?: string
 }
 
-// Initialize SendGrid
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+// Initialize MailerSend
+let mailerSend: MailerSend | null = null
+
+if (process.env.MAILERSEND_API_TOKEN) {
+  mailerSend = new MailerSend({
+    apiKey: process.env.MAILERSEND_API_TOKEN,
+  })
 } else {
-  console.warn('⚠️ SENDGRID_API_KEY not found in environment variables')
+  console.warn('⚠️ MAILERSEND_API_TOKEN not found in environment variables')
 }
 
 export async function sendEmail({ to, subject, html, text }: EmailOptions) {
   try {
-    // Если SENDGRID_API_KEY не настроен, просто логируем без отправки
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your-sendgrid-api-key') {
+    // Если MAILERSEND_API_TOKEN не настроен, просто логируем без отправки
+    if (!mailerSend || !process.env.MAILERSEND_API_TOKEN || process.env.MAILERSEND_API_TOKEN === 'your-mailersend-api-token') {
       console.log('📧 Email (demo mode):', { to, subject })
       console.log('📧 Content:', html.substring(0, 200) + '...')
       return { success: true, messageId: 'demo-' + Date.now() }
     }
 
-    const msg = {
-      to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@drumschool.com',
-      subject,
-      html,
-      text: text || html.replace(/<[^>]*>/g, ''), // простое удаление HTML тегов для text версии
-    }
+    // Prepare email parameters
+    const sentFrom = new Sender(
+      process.env.MAILERSEND_FROM_EMAIL || 'noreply@drumschool.com',
+      'Drum School'
+    )
 
-    const response = await sgMail.send(msg)
-    console.log('📧 Email sent via SendGrid:', response[0].statusCode)
-    return { success: true, messageId: response[0].headers['x-message-id'] || 'sendgrid-' + Date.now() }
-  } catch (error: any) {
-    console.error('❌ SendGrid email error:', error)
+    const recipients = [new Recipient(to, to)]
+
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject(subject)
+      .setHtml(html)
+      .setText(text || html.replace(/<[^>]*>/g, '')) // простое удаление HTML тегов для text версии
+
+    const response = await mailerSend.email.send(emailParams)
     
-    // SendGrid specific error handling
+    console.log('📧 Email sent via MailerSend:', response.statusCode)
+    return { success: true, messageId: response.body?.message_id || 'mailersend-' + Date.now() }
+  } catch (error: any) {
+    console.error('❌ MailerSend email error:', error)
+    
+    // MailerSend specific error handling
     if (error.response) {
-      console.error('SendGrid error body:', error.response.body)
-      return { success: false, error: error.response.body.errors?.[0]?.message || error.message }
+      console.error('MailerSend error body:', error.response.body)
+      return { 
+        success: false, 
+        error: error.response.body?.message || error.message 
+      }
     }
     
     return { success: false, error: error.message }
