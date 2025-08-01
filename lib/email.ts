@@ -1,5 +1,5 @@
 // lib/email.ts
-import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend'
+import nodemailer from 'nodemailer'
 
 interface EmailOptions {
   to: string
@@ -8,62 +8,57 @@ interface EmailOptions {
   text?: string
 }
 
-// Initialize MailerSend
-let mailerSend: MailerSend | null = null
+// Initialize SMTP transporter
+let transporter: nodemailer.Transporter | null = null
 
-if (process.env.MAILERSEND_API_TOKEN) {
-  mailerSend = new MailerSend({
-    apiKey: process.env.MAILERSEND_API_TOKEN,
-  })
-} else {
-  console.warn('⚠️ MAILERSEND_API_TOKEN not found in environment variables')
+function createTransporter() {
+  if (!transporter) {
+    const smtpConfig = {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER || process.env.EMAIL_USER,
+        pass: process.env.SMTP_PASS || process.env.EMAIL_APP_PASSWORD,
+      },
+    }
+    
+    transporter = nodemailer.createTransporter(smtpConfig)
+  }
+  
+  return transporter
 }
 
 export async function sendEmail({ to, subject, html, text }: EmailOptions) {
   try {
-    // Если MAILERSEND_API_TOKEN не настроен, просто логируем без отправки
-    if (!mailerSend || !process.env.MAILERSEND_API_TOKEN || process.env.MAILERSEND_API_TOKEN === 'your-mailersend-api-token') {
+    // Check if SMTP is configured
+    if (!process.env.SMTP_USER && !process.env.EMAIL_USER) {
       console.log('📧 Email (demo mode):', { to, subject })
       console.log('📧 Content:', html.substring(0, 200) + '...')
       return { success: true, messageId: 'demo-' + Date.now() }
     }
 
-    // Prepare email parameters
-    const sentFrom = new Sender(
-      process.env.MAILERSEND_FROM_EMAIL || 'noreply@drumschool.com',
-      'Drum School'
-    )
-
-    const recipients = [new Recipient(to, to)]
-
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setSubject(subject)
-      .setHtml(html)
-      .setText(text || html.replace(/<[^>]*>/g, '')) // простое удаление HTML тегов для text версии
-
-    const response = await mailerSend.email.send(emailParams)
+    const transporter = createTransporter()
     
-    console.log('📧 Email sent via MailerSend:', response.statusCode)
-    return { success: true, messageId: response.body?.message_id || 'mailersend-' + Date.now() }
-  } catch (error: any) {
-    console.error('❌ MailerSend email error:', error)
-    
-    // MailerSend specific error handling
-    if (error.response) {
-      console.error('MailerSend error body:', error.response.body)
-      return { 
-        success: false, 
-        error: error.response.body?.message || error.message 
-      }
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.SMTP_FROM || 'noreply@drumschool.com',
+      to,
+      subject,
+      html,
+      text: text || html.replace(/<[^>]*>/g, ''), // Simple HTML tag removal for text version
     }
+
+    const result = await transporter.sendMail(mailOptions)
     
+    console.log('📧 Email sent via SMTP:', result.messageId)
+    return { success: true, messageId: result.messageId }
+  } catch (error: any) {
+    console.error('❌ SMTP email error:', error)
     return { success: false, error: error.message }
   }
 }
 
-// Шаблоны email
+// Email templates
 export const emailTemplates = {
   adminNotification: (bookingId: string, bookingDetails: string) => ({
     subject: `Новая заявка на бронирование #${bookingId}`,

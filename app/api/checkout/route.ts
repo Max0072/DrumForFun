@@ -162,7 +162,7 @@ async function sendAdminEmail(orderCode: string, customerInfo: any, items: CartI
     </div>
   `
 
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.MAILERSEND_FROM_EMAIL
+  const adminEmail = process.env.ADMIN_EMAIL
   if (adminEmail) {
     await sendEmail({
       to: adminEmail,

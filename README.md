@@ -1,111 +1,111 @@
-# 🥁 DrumForFun - Система бронирования школы барабанов
+# 🥁 DrumForFun - Drum School Booking System
 
-Веб-приложение для бронирования занятий в школе барабанов с админ-панелью.
+Web application for booking drum school lessons with admin panel.
 
-## 🚀 Быстрый деплой на VPS
+## 🚀 Quick VPS Deployment
 
-### 1. Клонирование проекта
+### 1. Clone the project
 ```bash
 git clone https://github.com/your-username/drum-for-fun.git
 cd drum-for-fun
 ```
 
-### 2. Настройка переменных окружения
+### 2. Configure environment variables
 ```bash
-# Скопируйте пример файла
+# Copy the example file
 cp .env.example .env.production
 
-# Отредактируйте файл с вашими данными
+# Edit the file with your data
 nano .env.production
 ```
 
-### 3. Автоматический деплой
+### 3. Automatic deployment
 ```bash
-# Запустите скрипт деплоя
+# Run the deployment script
 chmod +x deploy-vps.sh
 ./deploy-vps.sh
 ```
 
-### 4. Проверка работы
+### 4. Check deployment
 ```bash
-# Статус сервисов
+# Service status
 docker-compose ps
 
-# Логи
+# Logs
 docker-compose logs -f
 
-# Ваш сайт будет доступен по адресу:
+# Your site will be available at:
 # https://yourdomain.com
 ```
 
-## 🔧 Локальная разработка
+## 🔧 Local Development
 
-### Установка зависимостей
+### Install dependencies
 ```bash
 npm install
 ```
 
-### Запуск в режиме разработки
+### Run in development mode
 ```bash
-# Обычный запуск
+# Regular start
 npm run dev
 
-# Или с Docker
+# Or with Docker
 ./docker-run.sh
 ```
 
-### Сборка проекта
+### Build project
 ```bash
 npm run build
 npm start
 ```
 
-## 🗄️ База данных
+## 🗄️ Database
 
-### Продакшен (рекомендуется)
-- PostgreSQL в Docker контейнере
-- Автоматическая инициализация и миграции
+### Production (recommended)
+- PostgreSQL in Docker container
+- Automatic initialization and migrations
 
-### Разработка
-- SQLite в файле `./data/bookings.db`
+### Development
+- SQLite in file `./data/bookings.db`
 
-## 🔐 Админ-панель
+## 🔐 Admin Panel
 
-Доступ: `https://yourdomain.com/admin/login`
+Access: `https://yourdomain.com/admin/login`
 
-Данные для входа настраиваются в `.env.production`:
-- `ADMIN_LOGIN` - логин администратора
-- `ADMIN_PASSWORD` - пароль администратора
+Login credentials are configured in `.env.production`:
+- `ADMIN_LOGIN` - administrator username
+- `ADMIN_PASSWORD` - administrator password
 
-## 📧 Email уведомления
+## 📧 Email Notifications
 
-Настройте Gmail App Password в `.env.production`:
+Configure Gmail App Password in `.env.production`:
 ```env
 EMAIL_USER=your-email@gmail.com
 EMAIL_APP_PASSWORD=your-gmail-app-password
 ```
 
-## 🐳 Docker команды
+## 🐳 Docker Commands
 
 ```bash
-# Запуск продакшен версии
+# Run production version
 docker-compose up -d
 
-# Остановка
+# Stop
 docker-compose down
 
-# Логи
+# Logs
 docker-compose logs -f
 
-# Подключение к базе данных
+# Connect to database
 docker-compose exec db psql -U drumschool -d drumschool
 ```
 
-## 🔒 Безопасность
+## 🔒 Security
 
-1. **Смените все пароли** в `.env.production`
-2. **Настройте SSL** - скрипт деплоя поможет с Let's Encrypt
-3. **Настройте firewall**:
+1. **Change all passwords** in `.env.production`
+2. **Configure SSL** - deployment script will help with Let's Encrypt
+3. **Configure firewall**:
    ```bash
    sudo ufw allow ssh
    sudo ufw allow 80
@@ -113,30 +113,28 @@ docker-compose exec db psql -U drumschool -d drumschool
    sudo ufw enable
    ```
 
-## 📁 Структура проекта
+## 📁 Project Structure
 
 ```
 drum-for-fun/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API endpoints
-│   ├── admin/             # Админ-панель
-│   └── ...                # Публичные страницы
-├── components/            # React компоненты
-├── lib/                   # Утилиты и конфигурация
-├── docker-compose.yml     # Продакшен Docker
-├── deploy-vps.sh         # Скрипт деплоя
-└── README.md             # Этот файл
+│   ├── admin/             # Admin panel
+│   └── ...                # Public pages
+├── components/            # React components
+├── lib/                   # Utilities and configuration
+├── docker-compose.yml     # Production Docker
+├── deploy-vps.sh         # Deployment script
+└── README.md             # This file
 ```
 
-## 🆘 Поддержка
+## 🆘 Support
 
-При возникновении проблем:
-1. Проверьте логи: `docker-compose logs -f`
-2. Убедитесь, что порты 80 и 443 открыты
-3. Проверьте настройки DNS для вашего домена
+If you encounter problems:
+1. Check logs: `docker-compose logs -f`
+2. Make sure ports 80 and 443 are open
+3. Check DNS settings for your domain
 
-## 📝 Лицензия
+## 📝 License
 
-MIT License# Test commit to check Vercel deployment trigger
-# Second test commit to verify Vercel is disabled
-# Third test commit to confirm Vercel is fully disabled
+MIT License

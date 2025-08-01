@@ -46,7 +46,7 @@
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
-    "mailersend": "^2.6.0",
+    "nodemailer": "^6.9.8",
     "next": "15.2.4",
     "next-themes": "latest",
     "pg": "^8.16.3",
@@ -65,6 +65,7 @@
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/nodemailer": "^6.4.14",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8",

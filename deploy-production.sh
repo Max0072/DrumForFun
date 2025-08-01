@@ -1,103 +1,103 @@
 #!/bin/bash
 
-echo "🚀 Production деплой DrumForFun на порты 80/443..."
+echo "🚀 Production deployment of DrumForFun on ports 80/443..."
 
-# Проверяем что запускаем от root или с sudo
+# Check if running as root or with sudo
 if [ "$EUID" -ne 0 ]; then 
-    echo "❌ Запустите скрипт от root или с sudo"
-    echo "Использование: sudo ./deploy-production.sh"
+    echo "❌ Run the script as root or with sudo"
+    echo "Usage: sudo ./deploy-production.sh"
     exit 1
 fi
 
-# Проверяем наличие .env.production
+# Check for .env.production file
 if [ ! -f ".env.production" ]; then
-    echo "❌ Файл .env.production не найден!"
-    echo "Создайте файл с переменными окружения"
+    echo "❌ .env.production file not found!"
+    echo "Create the file with environment variables"
     exit 1
 fi
 
-# Останавливаем простой деплой если запущен
-echo "🛑 Останавливаем предыдущие контейнеры..."
+# Stop simple deployment if running
+echo "🛑 Stopping previous containers..."
 docker-compose -f docker-compose.simple.yml down 2>/dev/null || true
 docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
 
-# Проверяем и останавливаем сервисы на портах 80/443
-echo "🔍 Проверяем порты 80 и 443..."
+# Check and stop services on ports 80/443
+echo "🔍 Checking ports 80 and 443..."
 if lsof -i :80 >/dev/null 2>&1; then
-    echo "⚠️  Порт 80 занят. Останавливаем сервисы..."
+    echo "⚠️  Port 80 is occupied. Stopping services..."
     systemctl stop nginx 2>/dev/null || true
     systemctl stop apache2 2>/dev/null || true
 fi
 
 if lsof -i :443 >/dev/null 2>&1; then
-    echo "⚠️  Порт 443 занят. Останавливаем сервисы..."
+    echo "⚠️  Port 443 is occupied. Stopping services..."
     systemctl stop nginx 2>/dev/null || true
     systemctl stop apache2 2>/dev/null || true
 fi
 
-# Создаем необходимые директории
-echo "📁 Создаем директории..."
+# Create necessary directories
+echo "📁 Creating directories..."
 mkdir -p data ssl
 
-# Проверяем SSL сертификаты
+# Check SSL certificates
 if [ ! -f "ssl/fullchain.pem" ] || [ ! -f "ssl/privkey.pem" ]; then
-    echo "🔒 SSL сертификаты не найдены!"
-    echo "Запустите сначала: ./setup-ssl.sh"
+    echo "🔒 SSL certificates not found!"
+    echo "Run first: ./setup-ssl.sh"
     exit 1
 fi
 
-# Копируем базу данных если она есть
+# Copy database if it exists
 if [ -f "bookings.db" ]; then
-    echo "📋 Копируем базу данных..."
+    echo "📋 Copying database..."
     cp bookings.db data/bookings.db
 fi
 
-# Обновляем переменную окружения для HTTPS
-echo "⚙️ Обновляем конфигурацию для HTTPS..."
+# Update environment variable for HTTPS
+echo "⚙️ Updating configuration for HTTPS..."
 sed -i 's|NEXT_PUBLIC_BASE_URL=http://|NEXT_PUBLIC_BASE_URL=https://|g' .env.production
 
-# Удаляем pnpm-lock.yaml для избежания конфликтов
+# Remove pnpm-lock.yaml to avoid conflicts
 rm -f pnpm-lock.yaml
 
-# Собираем и запускаем
-echo "🔨 Собираем и запускаем production..."
+# Build and run
+echo "🔨 Building and starting production..."
 docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 
-# Ждем запуска
-echo "⏳ Ждем запуска сервисов..."
+# Wait for startup
+echo "⏳ Waiting for services to start..."
 sleep 10
 
-# Проверяем статус
-echo "📊 Проверяем статус сервисов..."
+# Check status
+echo "📊 Checking service status..."
 docker-compose -f docker-compose.prod.yml --env-file .env.production ps
 
-# Проверяем доступность
-echo "🌐 Тестируем доступность..."
+# Check availability
+echo "🌐 Testing availability..."
 if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200\|301\|302"; then
-    echo "✅ HTTP порт работает"
+    echo "✅ HTTP port is working"
 else
-    echo "⚠️  HTTP порт не отвечает"
+    echo "⚠️  HTTP port is not responding"
 fi
 
 if curl -s -k -o /dev/null -w "%{http_code}" https://localhost | grep -q "200"; then
-    echo "✅ HTTPS порт работает"
+    echo "✅ HTTPS port is working"
 else
-    echo "⚠️  HTTPS порт не отвечает"
+    echo "⚠️  HTTPS port is not responding"
 fi
 
 echo ""
-echo "✅ Production деплой завершен!"
+echo "✅ Production deployment completed!"
 echo ""
-echo "🌐 Ваш сайт доступен по адресам:"
-echo "   HTTP:  http://drum4fun.club (перенаправляется на HTTPS)"
+echo "🌐 Your site is available at:"
+echo "   HTTP:  http://drum4fun.club (redirects to HTTPS)"
 echo "   HTTPS: https://drum4fun.club"
-echo "   Админ: https://drum4fun.club/admin/login"
+echo "   Admin: https://drum4fun.club/admin/login"
 echo ""
-echo "📋 Полезные команды:"
-echo "   Логи:     docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f"
-echo "   Рестарт:  docker-compose -f docker-compose.prod.yml --env-file .env.production restart"
-echo "   Стоп:     docker-compose -f docker-compose.prod.yml --env-file .env.production down"
+echo "📋 Useful commands:"
+echo "   Logs:    docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f"
+echo "   Restart: docker-compose -f docker-compose.prod.yml --env-file .env.production restart"
+echo "   Stop:    docker-compose -f docker-compose.prod.yml --env-file .env.production down"
 echo ""
-echo "🔒 SSL сертификаты:"
-echo "   Автообновление: добавьте в crontab обновление certbot"
-echo "   Мониторинг: проверяйте срок действия сертификатов"
+echo "🔒 SSL certificates:"
+echo "   Auto-renewal: add certbot renewal to crontab"
+echo "   Monitoring: check certificate expiration dates"

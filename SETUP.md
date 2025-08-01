@@ -121,7 +121,7 @@ npm install pg @types/pg
 2. Обновите `lib/database.ts` для PostgreSQL
 
 3. Используйте профессиональный email сервис:
-   - SendGrid
+   - SMTP (Gmail, Yandex, Mail.ru)
    - Amazon SES
    - Mailgun
 

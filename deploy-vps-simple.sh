@@ -1,43 +1,43 @@
 #!/bin/bash
 
-echo "🚀 Простой деплой на VPS с SQLite..."
+echo "🚀 Simple VPS deployment with SQLite..."
 
-# Остановка и очистка существующих контейнеров
-echo "🛑 Останавливаем существующие контейнеры..."
+# Stop and clean existing containers
+echo "🛑 Stopping existing containers..."
 docker-compose down 2>/dev/null || true
 docker-compose -f docker-compose.simple.yml down 2>/dev/null || true
 
-# Удаляем pnpm-lock.yaml чтобы избежать конфликтов
-echo "🧹 Очищаем конфликтующие файлы..."
+# Remove pnpm-lock.yaml to avoid conflicts
+echo "🧹 Cleaning conflicting files..."
 rm -f pnpm-lock.yaml
 
-# Создаем необходимые директории
-echo "📁 Создаем директории..."
+# Create necessary directories
+echo "📁 Creating directories..."
 mkdir -p data
 mkdir -p ssl
 
-# Копируем базу данных если она есть
+# Copy database if it exists
 if [ -f "bookings.db" ]; then
-    echo "📋 Копируем существующую базу данных..."
+    echo "📋 Copying existing database..."
     cp bookings.db data/bookings.db
 fi
 
-# Собираем и запускаем
-echo "🔨 Собираем и запускаем контейнеры..."
+# Build and run
+echo "🔨 Building and starting containers..."
 docker-compose -f docker-compose.simple.yml --env-file .env.production up -d --build
 
-# Проверяем статус
-echo "📊 Проверяем статус..."
+# Check status
+echo "📊 Checking status..."
 docker-compose -f docker-compose.simple.yml  --env-file .env.production ps
 
 echo ""
-echo "✅ Деплой завершен!"
+echo "✅ Deployment completed!"
 echo ""
-echo "🌐 Сайт доступен по адресу: http://164.92.208.159:3000"
-echo "🔧 Админ панель: http://164.92.208.159:3000/admin/login"
+echo "🌐 Site available at: http://164.92.208.159:3000"
+echo "🔧 Admin panel: http://164.92.208.159:3000/admin/login"
 echo ""
-echo "📋 Полезные команды:"
-echo "   Логи:     docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f"
-echo "   Рестарт:  docker-compose -f docker-compose.prod.yml --env-file .env.production restart"
-echo "   Стоп:     docker-compose -f docker-compose.prod.yml --env-file .env.production down"
+echo "📋 Useful commands:"
+echo "   Logs:    docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f"
+echo "   Restart: docker-compose -f docker-compose.prod.yml --env-file .env.production restart"
+echo "   Stop:    docker-compose -f docker-compose.prod.yml --env-file .env.production down"
 echo ""
